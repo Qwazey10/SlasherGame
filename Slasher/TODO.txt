@@ -1,0 +1,13 @@
+TODO - 02/25/25
+
+ADD Item Pickup mechanic on E Press - Add Item To Inventory. 
+
+CREATE FPP hands in Blender. See if we can parent to Unreal skeleton and have it work with the FPP Anims. 
+
+ADD Cheat menu - Dev Sprint, set sprint speed to something like 2000, can use a boolean on the shift press. 
+Add Jump height modifier. 
+
+ADD Crouch to character. 
+
+Create the basic assets for the first world. 
+

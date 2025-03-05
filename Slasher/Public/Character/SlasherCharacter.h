@@ -436,6 +436,9 @@ public:
 	void FootStepLeft();
 	void FootStepRight();
 
+	void FootStepAudioLineTrace(int FootIndex);
+	void PlayFootStepSoundAtLocation(FVector Location, USoundBase* SoundToPlay);
+
 	//Footstep Audio 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Locomotion")
 	bool bIsSprinting;
@@ -450,10 +453,23 @@ public:
 	UPROPERTY()
 	UTimelineComponent* CrouchTimeline;
 
+	void JumpPressWhileSwimming();
+	UPROPERTY()
+	bool bSpaceBarPressed = false;
+
+	//Combat Functions
+	void OnAttack();
+	bool bIsAttacking = false;
+	
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	
 	
 /*
  *  Rotating Mesh Menu System Vars
  */
+	
 	void RotatingMenuItem_SetBaseRotation(float Rotation);
 	
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)

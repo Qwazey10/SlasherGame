@@ -8,6 +8,19 @@ public class Slasher : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "ImGui", "Niagara", "Slate", "SlateCore", "PhysicsCore", "Water"});
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"HeadMountedDisplay",
+			"ImGui",
+			"Niagara",
+			"Slate",
+			"SlateCore",
+			"PhysicsCore",
+			"Water",
+			"NavigationSystem"
+		});
 	}
 }

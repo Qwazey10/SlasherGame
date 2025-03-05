@@ -17,7 +17,8 @@ class SLASHER_API AItemActor : public AActor , public IBPI_PlayerToInteractable
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	
 	// Sets default values for this actor's properties
 	AItemActor();
 
@@ -123,9 +124,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector PhysicsImpactLocation;
+
+	//Debug
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Actor Debug")
+	bool bShowPhysicsImpactAudioDebugSpheres = false;
 	
-	UPROPERTY(EditAnywhere, Category = "Debug")
-	bool bDebugImpacts = false;
+	void ItemActor_DrawDebugSphere(FVector Location, float Radius, FColor Color, float Duration, bool bPersistentLines);
 
 
 	FSphericalPontoon Pontoon_00;
@@ -156,13 +160,11 @@ public:
 	FTimerHandle HitTimerHandle;
 	void StartPhysicsHitTimer();
 	void ResetHitTimer();
-	void ItemActor_DrawDebugSphere(FVector Location, float Radius, FColor Color, float Duration, bool bPersistentLines);
+	
 	USoundCue* SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMaterial, int ImpactClassificationInt);
 	void SetMassFromDataTable();
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Actor Debug")
-	bool bShowPhysicsImpactAudioDebugSpheres = true;
+	
 	
 	void AddSelfToInventory();
 	

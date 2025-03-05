@@ -11,7 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Modes/SlasherGameInstance.h"
-
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -33,6 +33,7 @@ ASlasherCharacter::ASlasherCharacter()
 	
 	//Actor Tags
 	Tags.Add(FName("Player"));
+	
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -164,8 +165,13 @@ void ASlasherCharacter::Tick(float DeltaTime)
 
 	InteractHighlightTrace();
 
-
-
+	if (bSpaceBarPressed)
+		{
+			if (GetCharacterMovement()->IsSwimming())
+			{
+				JumpPressWhileSwimming();
+			}
+		}
 	
 }
 
@@ -223,7 +229,7 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	//PlayerInputComponent->BindAction("E Press", IE_Pressed, this, ASlasherCharacter::E_Press);
 	//PlayerInputComponent->BindAction("E Press")
 	// Bind fire event
-	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASlasherCharacter::OnFire);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASlasherCharacter::OnAttack);
 
 	// Enable touchscreen input
 	//EnableTouchscreenMovement(PlayerInputComponent);
@@ -246,8 +252,6 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 void ASlasherCharacter::OnPress_W()
 {
-	GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,"Pressed W");
-	AddMovementInput(GetActorForwardVector(), 1);
 	
 }
 
@@ -331,7 +335,9 @@ void ASlasherCharacter::OnPress_CTRL()
 }
 void ASlasherCharacter::OnPress_SPACE()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed Space registered");
+	bSpaceBarPressed = true;
+	
+	
 }
 void ASlasherCharacter::OnPress_TAB()
 {
@@ -371,7 +377,7 @@ void ASlasherCharacter::OnRelease_CTRL()
 }
 void ASlasherCharacter::OnRelease_SPACE()
 {
-	
+	bSpaceBarPressed = false;
 }
 void ASlasherCharacter::OnRelease_TAB()
 {
@@ -424,7 +430,49 @@ void ASlasherCharacter::BPAudioEvent_LeftFootStepAudio_Implementation()
 	
 }
 
+void ASlasherCharacter::OnAttack()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, "ATTACK BUTTON HIT");
+	
+	if (bIsAttacking == false)
+	{
+		if (PlayerDataAsset->NormalAttackMontage)
+		{
+			if (PrimaryContextMenuManager->bIsMenuOpen == false)
+			{
+				bIsAttacking = true;
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				//AnimInstance->Montage_Play(PlayerDataAsset->NormalAttackMontage, Total_AttackSpeed);
+				//AnimInstance->OnMontageBlendingOut
 
+				// Play the montage and store the duration
+				AnimInstance->Montage_Play(PlayerDataAsset->NormalAttackMontage, 2.0f);
+			
+				// Bind the delegate to our end function
+				FOnMontageEnded MontageEndedDelegate;
+				MontageEndedDelegate.BindUFunction(this, FName("OnAttackMontageEnded"));
+				AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, PlayerDataAsset->NormalAttackMontage);
+			
+			
+			}
+			else
+			{
+			
+				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "SlasherCharacter.cpp -- OnAttack -- Menu is OPEN, Blocking Attack Call");
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "SlasherCharacter.cpp -- OnAttack() -- Anim Montage Asset is not yet, Add to PlayerDataASset");
+		}
+	}
+}
+
+void ASlasherCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	bIsAttacking = false;
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, "AttackMontage End Delg Called");
+}
 ///////// OldEvents
 
 //void ASlasherCharacter::OnFire()
@@ -481,7 +529,9 @@ void ASlasherCharacter::BPAudioEvent_LeftFootStepAudio_Implementation()
 
 
 
-//*********** BEGIN PLAY FUNCTIONS ***************
+/*
+ *  Begin Play Functions
+ */
 void ASlasherCharacter::BeginPlay_SetUpBaseVars()
 {
 
@@ -535,19 +585,28 @@ void ASlasherCharacter::BeginPlay_SetUpBaseVars()
 //	}
 //}
 
+/*
+ *  Add Movement in the Forward and Back Directions
+ */
 void ASlasherCharacter::MoveForward(float Value)
 {
 	if (Value != 0.0f)
 	{
 		if (PrimaryContextMenuManager->bIsMenuOpen == false)
 		{
+			if (GetCharacterMovement()->IsSwimming())
+			{
+				const FVector CameraForward = FirstPersonCameraComponent->GetForwardVector();
+				AddMovementInput(CameraForward, 1.0f);
+			}
 			AddMovementInput(GetActorForwardVector(), Value);
 		}
-		// add movement in that direction
-		
 	}
 }
 
+/*
+ *     Add Movement in the Left/Right Direction. 
+ */
 void ASlasherCharacter::MoveRight(float Value)
 {
 	if (Value != 0.0f)
@@ -556,7 +615,7 @@ void ASlasherCharacter::MoveRight(float Value)
 		{
 			AddMovementInput(GetActorRightVector(), Value);
 		}
-		// add movement in that direction
+		
 		
 	}
 }
@@ -879,6 +938,7 @@ void ASlasherCharacter::BeginPlay_SetBaseAttributes()
 		}
 	}
 }
+
 
 void ASlasherCharacter::testFunc_SetBaseVars()
 {
@@ -1325,18 +1385,29 @@ void ASlasherCharacter::EquipItem_Primary(int PrimaryItemIDToEquip)
 {
 	
 	FName RowName = FName(FString::FromInt(PrimaryItemIDToEquip));
+	
 	if (ItemDataTable->GetRowNames().Contains(RowName))
 	{
 		FItemStruct* ItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName,TEXT ("PrimaryItemIDtoEquip"));
-		PrimaryItemMesh->SetStaticMesh(ItemStruct->ItemDisplayMesh);
-		
+		if (ItemStruct->EquipSlot == EEquipmentSlot::Primary)
+		{
+			
+			PrimaryItemMesh->SetStaticMesh(ItemStruct->ItemDisplayMesh);
+			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipName = ItemStruct->ItemName;
+			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipDescription = "Item Spawn Was Successful";
+		}
+		else
+		{
+			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipName = ItemStruct->ItemName;
+			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipDescription = "Item Spawn Is Not a Primary Equip Slot Item";
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("EquipItem_Primary: EquipSlot is not Primary"));
+			
+		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Display, TEXT("SlasherCharacter.cpp() - Equip Item ID Does not Have a Viable RowName"))
 	}
-
-	
 }
 
 
@@ -1344,8 +1415,6 @@ void ASlasherCharacter::EquipItem_Primary(int PrimaryItemIDToEquip)
 void ASlasherCharacter::EquipItem_Secondary(int SecondaryItemIDToEquip)
 {
  //Todo - Implement Equip Secondary once Primary is Set UP. 
-
-	
 }
 
 
@@ -1353,7 +1422,6 @@ void ASlasherCharacter::EquipItem_Secondary(int SecondaryItemIDToEquip)
 void ASlasherCharacter::BeginPlay_CreateInventoryWidgets()
 {
 	//UWorld* World = GEngine->GetWorld();
-	
 }
 
 void ASlasherCharacter::ToggleInventoryWidget()
@@ -1443,19 +1511,181 @@ void ASlasherCharacter::DebugCharacterPrintString_Error(const FString& String) c
 
 void ASlasherCharacter::FootStepLeft()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("FootStepLeft"));
+	FootStepAudioLineTrace(0);
 }
 
 
 void ASlasherCharacter::FootStepRight()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("FootStepRight"));	
+	FootStepAudioLineTrace(1);
 }
+
+void ASlasherCharacter::FootStepAudioLineTrace(int FootIndex)
+{
+	FVector StartLocation = GetActorLocation();
+	FVector EndLocation = StartLocation - FVector(0.0f, 0.0f, 110.0f);
+	FHitResult Hit;
+	TArray<AActor*> ActorsToIgnore;
+
+	
+	const bool bHit = UKismetSystemLibrary::LineTraceSingle(
+	this,
+	StartLocation,
+	EndLocation,
+	UEngineTypes::ConvertToTraceType(ECC_Visibility),
+	false,
+	ActorsToIgnore,
+	EDrawDebugTrace::ForDuration,Hit,
+	true,
+	FLinearColor::Red,
+	FLinearColor::Green,
+	10.0f
+	);
+
+	if (bHit)
+	{
+		BPAudioEvent_LeftFootStepAudio();
+		switch (Hit.PhysMaterial->SurfaceType)
+		{
+			default:
+			{
+					
+				break;
+			}
+		
+		
+		case SurfaceType_Default:
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Default);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Default);
+					}
+				break;
+			}
+		
+		case SurfaceType1: // Wood
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Wood);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Wood);
+					}
+				break;
+			}
+		case SurfaceType2: // Stone
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Stone);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Stone);
+					}
+				break;
+			}
+
+		case SurfaceType3: // Metal
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Metal);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Metal);
+					}
+				break;
+			}
+
+		case SurfaceType4: // Water
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Water);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Water);
+					}
+				break;
+			}
+	
+		case SurfaceType5: // Glass
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Glass);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Glass);
+					}
+				break;
+			}
+		
+		case SurfaceType6: // Grass
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Grass);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Grass);
+					}
+				break;
+			}
+	
+		case SurfaceType7: // Slime
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Slime);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Slime);
+					}
+				break;
+			}
+		case SurfaceType8: //Lava
+			{
+					if (FootIndex == 0)
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Lava);
+					}
+					else
+					{
+						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Lava);
+					}
+				break;
+			}
+		}
+	}
+}
+
+
+void ASlasherCharacter::PlayFootStepSoundAtLocation(FVector Location, USoundBase* SoundToPlay)
+{
+	
+	float VolRand = FMath::FRandRange(0.7f, 1.0f);
+	float PitchRand = FMath::FRandRange(0.9f, 1.1f);
+	UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, Location, VolRand, PitchRand,0.0f, PlayerDataAsset->FootStep_SoundAttenuation);
+	
+}
+
 
 void ASlasherCharacter::StartSprint()
 {
 	
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("StartSprint"));
 	bIsSprinting = true;
 	if (bDebug_DevSprint)
 	{
@@ -1468,37 +1698,18 @@ void ASlasherCharacter::StartSprint()
 	
 }
 
+
 void ASlasherCharacter::EndSprint()
 {
-	//UMovementComponent* MovementComp = GetCharacterMovement();
-	//UCharacterMovementComponent* CharMoveComp = Cast<UCharacterMovementComponent>(MovementComp);
 	
 	GetCharacterMovement()->MaxWalkSpeed = PlayerDataAsset->BaseMovementSpeed;
 	bIsSprinting = false;
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("EndSprint"));
+	
 }
 
-//	//*
-///	UWorld* World = GetWorld();
-//	if (World != nullptr)
-//	{
-//		USlasherGameInstance* SlasherGI = World->GetGameInstance<USlasherGameInstance>();
-//		float WorkingEXP = SlasherGI->CurrentExperience;
-//
-//		if (WorkingEXP >= 0 && ExperienceDataTable != nullptr )
-//		{
-//		
-//		}
-//	}
-//
-//}
-//if (ItemDataTable != nullptr)
-//{
-//	FString ItemIDToString = FString::FromInt(SetupItemID);
-//	FName RowName = FName(*ItemIDToString);
-//
-//	if (ItemDataTable->GetRowNames().Contains(RowName))
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("( ItemActor.cpp -- BeginPlay_Setup() -- Item Data Table Row Found"));
-//		FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
-//		*/
+
+void ASlasherCharacter::JumpPressWhileSwimming()
+{
+	FVector UpSwim = GetActorUpVector();
+	AddMovementInput(UpSwim, 1.0f);
+}

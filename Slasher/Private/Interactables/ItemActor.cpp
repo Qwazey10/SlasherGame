@@ -239,6 +239,7 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 	float NormalImpulseLength = NormalImpulse.Size();
 	PhysicsImpactLocation = HitLocation;
 
+	
 	if (PhysicsInteractionAudioDataAsset)
 	{
 		if (NormalImpulseLength > 1000.0f)
@@ -255,9 +256,9 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Green, 10.0f, false);
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Yellow, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
 					}
 					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 1), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
-					GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Yellow, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
 				}
 				
 				else if (NormalizedForce > 1.0f && NormalizedForce <= 2.0f)
@@ -266,10 +267,11 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Orange, 10.0f, false);
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Orange, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
 					}
 					BPAudio_ItemActorPhysicsImpact_Medium();
 					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 2), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
-					GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Orange, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
+					
 				
 				}
 				
@@ -278,10 +280,11 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Orange, 10.0f, false);
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
 					}
 					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 3), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
 					BPAudio_ItemActorPhysicsImpact_Heavy();
-					GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
+					
 				}
 				
 				StartPhysicsHitTimer();
@@ -293,7 +296,7 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 	
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, FString::Printf(TEXT("ItemActor.cpp -- PhysicsImpactAudioDataAsset is Null")));
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, FString::Printf(TEXT("ItemActor.cpp -- PhysicsImpactAudioDataAsset is Null -- The link needs to be made in DT_PrimaryItem")));
 	}
 }
 

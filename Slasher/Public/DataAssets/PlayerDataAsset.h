@@ -57,11 +57,13 @@ class SLASHER_API UPlayerDataAsset : public UPrimaryDataAsset
 	
 	//Movement Vars
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Base Movement")
-	float BaseMovementSpeed;
+	float BaseMovementSpeed = 300;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Base Movement")
-	float MaxSpeed;
+	float MaxSpeed = 1000;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Base Movement")
+	float UpwardSwimSpeedMultiplier = 3.0f;
 
-	//Audio
+	//Audio Damage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - Damage")
 	USoundCue* HitAudio_00;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - Damage")
@@ -80,9 +82,59 @@ class SLASHER_API UPlayerDataAsset : public UPrimaryDataAsset
 	USoundCue* HitAudio_Miss;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - Damage")
 	USoundAttenuation* HitAudio_SoundAttenuation;
+	
+	//FootStep Audio 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Default;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Default;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Wood;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Wood;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Stone;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Stone;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Metal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Metal;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Water;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Water;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Glass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Glass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Grass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Grass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Slime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Slime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepLeft_Lava;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundCue* FootStepRight_Lava;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - FootSteps")
+	USoundAttenuation* FootStep_SoundAttenuation;
+	
+	
 	//Interact Data
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Audio - Damage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Interact Highlight Range")
 	float TraceDistance;
 
 	//CrouchData
@@ -102,5 +154,8 @@ class SLASHER_API UPlayerDataAsset : public UPrimaryDataAsset
 	float SprintSpeed = 600.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Sprint Data")
 	float DEV_SprintSpeed = 2000.0f ;
-	
+
+	//Animation Montages
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Animation Montages")
+	UAnimMontage* NormalAttackMontage;	
 };

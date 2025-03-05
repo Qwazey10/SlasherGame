@@ -1,11 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Animation/AnimNotify_FootStepLeft.h"
+#include "Animation/AnimNotify_FootStepRight.h"
 #include "Character/SlasherCharacter.h"
 
-
-void UAnimNotify_FootStepLeft::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+void UAnimNotify_FootStepRight::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	AActor* Owner = MeshComp->GetOwner();
 	
@@ -16,7 +15,7 @@ void UAnimNotify_FootStepLeft::Notify(USkeletalMeshComponent* MeshComp, UAnimSeq
 			ASlasherCharacter* PlayerCharacter = Cast<ASlasherCharacter>(Owner);
 			if (PlayerCharacter)
 			{
-				PlayerCharacter->FootStepLeft();
+				PlayerCharacter->FootStepRight();
 			}
 		}
 	}

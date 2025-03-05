@@ -16,7 +16,6 @@
 #include "Interactables/ItemActor.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Character/SlasherCharacter.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Modes/SlasherGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -393,6 +392,8 @@ void UAC_ImGuiActorDebug::UtilityFunctionWindow()
 		static int AddItemIDToInv;
 		static int PrimaryIDToAdd;
 
+		static FString Disp_PrimaryEquipName = EquipItemTextDisplay_PrimaryEquipName;
+		static FString EquipItemTextDisplay_Disp = EquipItemTextDisplay_PrimaryEquipDescription;
 		//Amount of EXP To Add
 		ImGui::TextColored(ImGui_COLOR_WHITE, "Amount of Exp to Add");
 		ImGui::InputInt("EXP To Add", &ExpToGrant);
@@ -406,6 +407,9 @@ void UAC_ImGuiActorDebug::UtilityFunctionWindow()
 		if (ImGui::Button("Equip Item ID"))
 		{
 			AActor * OwnerActor = GetOwner();
+			
+			ImGui::TextColored(ImGui_COLOR_GREEN, "Equipment Name To Equip:%s", TCHAR_TO_UTF8(*Disp_PrimaryEquipName));
+			ImGui::TextColored(ImGui_COLOR_GREEN, "Result:%s", TCHAR_TO_UTF8(*EquipItemTextDisplay_Disp));
 			if (OwnerActor->ActorHasTag("Player"))
 			{
 				ASlasherCharacter* PlayerRef = Cast<ASlasherCharacter>(OwnerActor);
@@ -625,12 +629,8 @@ void UAC_ImGuiActorDebug::DebugDisplayInventory()
 			{
 				ImGui::TextColored(ImGui_COLOR_WHITE, "Inventory Slot 00 = %d :%s", SlasherGI->Inventory[i], TCHAR_TO_UTF8(*InvStruct->ItemName));
 			}
-			
 		}
 	}
-	
-				
-				
 	ImGui::End();	
 }
 

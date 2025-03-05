@@ -18,6 +18,7 @@ class SLASHER_API USlasherGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 public:
+	
 	//Inventory Related Vars
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Slasher Inventory")

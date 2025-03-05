@@ -3,6 +3,7 @@
 
 #include "Enemy/EnemyBase.h"
 
+#include "Enemy/EnemyBaseAIController.h"
 #include "Structs/EnemyStruct.h"
 
 
@@ -12,6 +13,9 @@ AEnemyBase::AEnemyBase()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Tags.Add("Enemy");
+
+	AIControllerClass = AEnemyBaseAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	// Set size for collision capsule
 	//GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);

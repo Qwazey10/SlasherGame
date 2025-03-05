@@ -83,4 +83,5 @@ public:
 	
 	void DamageTaken(float DamageAmount, AActor* DamageInstigator, EDamageType DamageType);
 	void KillEnemyBase();
+	
 };

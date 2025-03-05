@@ -65,7 +65,13 @@ public:
 	//Debug Character Animation Vars
 	void DebugCharacterAnimation();
 	
+	//Debug Equip Item
+	FString EquipItemTextDisplay_PrimaryEquipName;
+	FString EquipItemTextDisplay_PrimaryEquipDescription;
 	
+	FString EquipItemTextDisplay_SecondaryEquipName;
+	FString EquipItemTextDisplay_SecondaryEquipDescription;
+
 	void SpawnItem(int ItemID);
 	void ImGui_DrawDebugSphere(UWorld* World, FVector Location, float Radius, FColor Color, float Duration, bool bPersistentLines);
 	

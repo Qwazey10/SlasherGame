@@ -4,50 +4,50 @@
 #include "Modes/SlasherGameInstance.h"
 
 
-
-
 void USlasherGameInstance::Init()
 {
 	Super::Init();
 	//Inventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // init inventory array, 20 slots
 	// Custom initialization logic
 	//
-	
+
 	//Inventory.Insert(2, 2); function to add an item to inventory. 
-	
-	
-	
+
+
 	for (int i = 0; i < InventorySize; i++)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Inventory[%d]"), i);
 		Inventory.Insert(0, i);
 	}
 	int Length = Inventory.Num();
-	UE_LOG(LogTemp, Warning, TEXT("Inventory Size: %d"), Length);	
-	
+	UE_LOG(LogTemp, Warning, TEXT("Inventory Size: %d"), Length);
+
 
 	//Init Equipment
-	Equipment = {0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	//Null          UMETA(DisplayName="Null "),
+	//Helm          UMETA(DisplayName="Helm -- 00"),
+	//Chest         UMETA(DisplayName="Chest -- 01"),
+	//Arms          UMETA(DisplayName="Arms -- 02"),
+	//Legs          UMETA(DisplayName="Legs -- 03"),
+	//Boots         UMETA(DisplayName="Boots -- 04"),
+	//Ring          UMETA(DisplayName="Ring -- 05"),
+	//Primary       UMETA(DisplayName="Primary -- 06"),
+	//Secondary     UMETA(DisplayName="Secondary -- 07"),
+	//UsableItem    UMETA(DisplayName="Usable Item -- 08"),
+	
+	Equipment = {0, 0, 0, 0, 0, 0, 8, 0, 0};
+	
 	UE_LOG(LogTemp, Warning, TEXT("Init Equipment Inventory	"));
 	int EquipmentSize = Equipment.Num();
 	UE_LOG(LogTemp, Warning, TEXT("Equipment Size: %d"), EquipmentSize);
 	UE_LOG(LogTemp, Warning, TEXT("GameInstance Initialized!"));
-	Inventory.Insert(2, 3);
-	Inventory.Insert(10, 4);
-	Inventory.Insert(11, 6);
-	Inventory.Insert(12, 7);
-	Inventory.Insert(10, 8);
-	Inventory.Insert(10, 9);
-	Inventory.Insert(10, 10);
-	Inventory.Insert(10, 11);
-	Inventory.Insert(10, 12);
-	
+	Inventory[1] = 10;
+
 }
 
 void USlasherGameInstance::Shutdown()
 {
 	Super::Shutdown();
-
-	// Custom cleanup logic
+	
 	UE_LOG(LogTemp, Warning, TEXT("GameInstance Shutdown!"));
 }

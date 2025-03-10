@@ -1,17 +1,21 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Character/SlasherCharacter.h"
+
+#include "NiagaraMeshRendererProperties.h"
 #include "ActorComponent/AC_AbilityComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "ActorComponent/AC_ImGuiActorDebug.h"
+#include "ActorComponent/EquipmentComponent.h"
 #include "Structs/LevelUpStruct.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Modes/SlasherGameInstance.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Tasks/GameplayTask_SpawnActor.h"
 
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -27,13 +31,13 @@ DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 ASlasherCharacter::ASlasherCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
-	
+
 	//Actor Tags
 	Tags.Add(FName("Player"));
-	
+
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -43,26 +47,28 @@ ASlasherCharacter::ASlasherCharacter()
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-39.56f, 1.75f, 64.f)); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
-	
+
 	//Set Up the FPP Arms Mesh
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent); // Sets the Inherited Mesh from Character Comp to Camera.
 	GetMesh()->SetOnlyOwnerSee(true);
 	GetMesh()->SetRelativeLocation(FVector(-5.0f, 0.0f, -157.0f));
 	GetMesh()->CastShadow = false;
 	GetMesh()->bCastDynamicShadow = false;
-	
+
 
 	PrimaryItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Primary Item Mesh"));
 	PrimaryItemMesh->CastShadow = false;
 	PrimaryItemMesh->bCastDynamicShadow = false;
 	//ToDo -- Set Relevant Location/Rotation
-	
+
 
 	//Create Character related Components 
 	DebugActorComponent = CreateDefaultSubobject<UAC_ImGuiActorDebug>(TEXT("ImGui Debug Component"));
 	AbilityComponent = CreateDefaultSubobject<UAC_AbilityComponent>(TEXT("Ability Component"));
 	PrimaryContextMenuManager = CreateDefaultSubobject<UAC_PrimaryContextMenuManager>(TEXT("PrimaryContextMenuManager"));
-	
+	EquipmentComponent = CreateDefaultSubobject<UEquipmentComponent>(TEXT("Equipment Component"));
+	SaveLoadComponent = CreateDefaultSubobject<USaveLoadComponent>(TEXT("SaveLoadComponent"));
+
 	//Rotating Item Static Mesh
 	RotatingMenuItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rotating Menu Item Static Mesh"));
 	RotatingMenuItemStaticMesh->SetupAttachment(FirstPersonCameraComponent);
@@ -73,10 +79,6 @@ ASlasherCharacter::ASlasherCharacter()
 	//CrouchTimeLine - Implementation
 	CrouchTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("CrouchTimeline"));
 	CrouchTimeline->SetLooping(false);
-
-
-
-
 }
 
 /**
@@ -98,9 +100,11 @@ void ASlasherCharacter::BeginPlay()
 	BeginPlay_SetUpBaseVars();
 	BeginPlay_SetLevel();
 	BeginPlay_SetBaseAttributes();
-	SetupEquipmentAttributes();
-	BeginPlay_CreateInventoryWidgets();
+
 	
+	BeginPlay_CreateInventoryWidgets();
+	//BeginPlay_SetEquipmentFromGIEquipment();
+
 	GEngine->AddOnScreenDebugMessage(1, 5, FColor::Red, "ASlasherCharacter::BeginPlay");
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	//FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
@@ -123,19 +127,19 @@ void ASlasherCharacter::BeginPlay()
 	}
 	//Update Timeline Function 
 	FOnTimelineFloat SetCrouchHeightTimeline;
-	
+
 	SetCrouchHeightTimeline.BindUFunction(this, FName("SetCrouchHeight"));
-	
+
 	if (PlayerDataAsset != nullptr)
 	{
 		CrouchTimeline->AddInterpFloat(PlayerDataAsset->CrouchCurve, SetCrouchHeightTimeline);
 		CrouchTimeline->SetPlayRate(PlayerDataAsset->CrouchSpeed);
 	}
-	
-	
+
+
 	//Timeline Finished Function 
 	FOnTimelineEvent SetCrouchHeightTimeline_Finished;
-	
+
 	SetCrouchHeightTimeline_Finished.BindUFunction(this, FName("OnCrouchFinished"));
 	CrouchTimeline->SetTimelineFinishedFunc(SetCrouchHeightTimeline_Finished);
 }
@@ -147,7 +151,7 @@ void ASlasherCharacter::Tick(float DeltaTime)
 	//Show Player Debug Menu. 
 	if (bShowPlayerDebugMenu)
 	{
-		DebugActorComponent->DisplayDebug_PlayerCharacter(this);   
+		DebugActorComponent->DisplayDebug_PlayerCharacter(this);
 	}
 
 	//Show Debug Item Trace Toggle. 	
@@ -155,29 +159,23 @@ void ASlasherCharacter::Tick(float DeltaTime)
 	{
 		DebugItemTrace();
 	}
-	
+
 	//Show Debug Enemy Trace Toggle
 	if (bShowDebugEnemyTrace)
 	{
-		
 	}
 	RotatingMenuItem_SetBaseRotation(25.0f);
 
 	InteractHighlightTrace();
 
 	if (bSpaceBarPressed)
+	{
+		if (GetCharacterMovement()->IsSwimming())
 		{
-			if (GetCharacterMovement()->IsSwimming())
-			{
-				JumpPressWhileSwimming();
-			}
+			JumpPressWhileSwimming();
 		}
-	
+	}
 }
-
-
-
-
 
 
 //********************************* Input ***********************************************
@@ -197,7 +195,7 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("OnPress_S", IE_Released, this, &ASlasherCharacter::OnRelease_S);
 	PlayerInputComponent->BindAction("OnPress_A", IE_Released, this, &ASlasherCharacter::OnRelease_A);
 	PlayerInputComponent->BindAction("OnPress_D", IE_Released, this, &ASlasherCharacter::OnRelease_D);
-	
+
 	//Action Inputs
 	PlayerInputComponent->BindAction("OnPress_Q", IE_Pressed, this, &ASlasherCharacter::OnPress_Q);
 	PlayerInputComponent->BindAction("OnPress_E", IE_Pressed, this, &ASlasherCharacter::OnPress_E);
@@ -216,13 +214,10 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	PlayerInputComponent->BindAction("OnPress_SHIFT", IE_Released, this, &ASlasherCharacter::OnRelease_SHIFT);
 	PlayerInputComponent->BindAction("OnPress_CTRL", IE_Released, this, &ASlasherCharacter::OnRelease_CTRL);
 	PlayerInputComponent->BindAction("OnPress_SPACE", IE_Released, this, &ASlasherCharacter::OnRelease_SPACE);
-	
-
-
 
 
 	//Old Slasher references
-	
+
 	// Bind jump events
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
@@ -233,7 +228,7 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 	// Enable touchscreen input
 	//EnableTouchscreenMovement(PlayerInputComponent);
-	
+
 
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASlasherCharacter::MoveForward);
@@ -252,7 +247,6 @@ void ASlasherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 void ASlasherCharacter::OnPress_W()
 {
-	
 }
 
 void ASlasherCharacter::OnPress_S()
@@ -274,22 +268,18 @@ void ASlasherCharacter::OnPress_D()
 //************** Input Release *********
 void ASlasherCharacter::OnRelease_W()
 {
-	
 }
 
 void ASlasherCharacter::OnRelease_A()
 {
-	
 }
 
 void ASlasherCharacter::OnRelease_S()
 {
-	
 }
 
 void ASlasherCharacter::OnRelease_D()
 {
-	
 }
 
 
@@ -304,7 +294,7 @@ void ASlasherCharacter::OnPress_Q()
 void ASlasherCharacter::OnPress_E()
 {
 	InteractTrace();
-	PlayerToEnemy_AttackSuccessful(6969.420);
+	
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed E registered");
 }
 
@@ -313,6 +303,7 @@ void ASlasherCharacter::OnPress_R()
 	PrimaryContextMenuManager->OpenContextMenuKeyPressed();
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed R registered");
 }
+
 void ASlasherCharacter::OnPress_T()
 {
 	AddItemToInventory(3);
@@ -323,22 +314,24 @@ void ASlasherCharacter::OnPress_G()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed G registered");
 }
+
 void ASlasherCharacter::OnPress_SHIFT()
 {
 	StartSprint();
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed SHIFT registered");
 }
+
 void ASlasherCharacter::OnPress_CTRL()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed CTRL registered");
 	OnStartCrouch(46.0f, 0.0f);
 }
+
 void ASlasherCharacter::OnPress_SPACE()
 {
 	bSpaceBarPressed = true;
-	
-	
 }
+
 void ASlasherCharacter::OnPress_TAB()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Pressed Tab registered");
@@ -349,91 +342,45 @@ void ASlasherCharacter::OnPress_TAB()
 //********** Action Input Release ********************
 void ASlasherCharacter::OnRelease_Q()
 {
-	
 }
+
 void ASlasherCharacter::OnRelease_E()
 {
-	
 }
+
 void ASlasherCharacter::OnRelease_R()
 {
-	
 }
+
 void ASlasherCharacter::OnRelease_T()
 {
-	
 }
+
 void ASlasherCharacter::OnRelease_G()
 {
-	
 }
+
 void ASlasherCharacter::OnRelease_SHIFT()
 {
 	EndSprint();
 }
+
 void ASlasherCharacter::OnRelease_CTRL()
 {
 	OnEndCrouch(96.0f, 0.0f);
 }
+
 void ASlasherCharacter::OnRelease_SPACE()
 {
 	bSpaceBarPressed = false;
 }
+
 void ASlasherCharacter::OnRelease_TAB()
 {
-	
-}
-
-//Audio Function Implementations
-void ASlasherCharacter::BPAudioEvent_LevelUpAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_HitAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_JumpAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_FallAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_BurningAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_AttackAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_BlockAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_RightFootStepAudio_Implementation()
-{
-	
-}
-
-void ASlasherCharacter::BPAudioEvent_LeftFootStepAudio_Implementation()
-{
-	
 }
 
 void ASlasherCharacter::OnAttack()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, "ATTACK BUTTON HIT");
-	
 	if (bIsAttacking == false)
 	{
 		if (PlayerDataAsset->NormalAttackMontage)
@@ -441,29 +388,35 @@ void ASlasherCharacter::OnAttack()
 			if (PrimaryContextMenuManager->bIsMenuOpen == false)
 			{
 				bIsAttacking = true;
+				if (IsValid(EquipmentComponent->PrimaryWeaponActorReference))
+				{
+					EquipmentComponent->PrimaryWeaponActorReference->AttackTrace();	
+				}
+				
 				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 				//AnimInstance->Montage_Play(PlayerDataAsset->NormalAttackMontage, Total_AttackSpeed);
 				//AnimInstance->OnMontageBlendingOut
-
+				PlayerToEnemy_AttackTrace(EDamageType::DirectDamage_Physical, Total_Damage);
 				// Play the montage and store the duration
-				AnimInstance->Montage_Play(PlayerDataAsset->NormalAttackMontage, 2.0f);
-			
+				float DisplayAttackSpeed = 1.0f + Total_AttackSpeed/100.0f;
+				AnimInstance->Montage_Play(PlayerDataAsset->NormalAttackMontage, DisplayAttackSpeed);
+
 				// Bind the delegate to our end function
 				FOnMontageEnded MontageEndedDelegate;
 				MontageEndedDelegate.BindUFunction(this, FName("OnAttackMontageEnded"));
 				AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, PlayerDataAsset->NormalAttackMontage);
-			
-			
 			}
 			else
 			{
-			
-				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "SlasherCharacter.cpp -- OnAttack -- Menu is OPEN, Blocking Attack Call");
+				
+				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+				                                 "SlasherCharacter.cpp -- OnAttack -- Menu is OPEN, Blocking Attack Call");
 			}
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "SlasherCharacter.cpp -- OnAttack() -- Anim Montage Asset is not yet, Add to PlayerDataASset");
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+			                                 "SlasherCharacter.cpp -- OnAttack() -- Anim Montage Asset is not yet, Add to PlayerDataASset");
 		}
 	}
 }
@@ -471,8 +424,8 @@ void ASlasherCharacter::OnAttack()
 void ASlasherCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	bIsAttacking = false;
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, "AttackMontage End Delg Called");
 }
+
 ///////// OldEvents
 
 //void ASlasherCharacter::OnFire()
@@ -527,24 +480,29 @@ void ASlasherCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterr
 //}
 
 
-
-
 /*
  *  Begin Play Functions
  */
 void ASlasherCharacter::BeginPlay_SetUpBaseVars()
 {
-
 	UCharacterMovementComponent* SlasherCharacterMovement = GetCharacterMovement();
 	if (PlayerDataAsset)
 	{
 		SlasherCharacterMovement->MaxWalkSpeed = PlayerDataAsset->BaseMovementSpeed;
 	}
-	
-	
-	
 }
 
+void ASlasherCharacter::BeginPlay_SetEquipmentFromGIEquipment()
+{
+	USlasherGameInstance* SlasherGameInstance = Cast<USlasherGameInstance>(GetWorld()->GetGameInstance());
+	if (SlasherGameInstance)
+	{
+		for (int i = 0; i < SlasherGameInstance->Equipment.Num(); i++)
+		{
+			EquipItemID(SlasherGameInstance->Equipment[i]);
+		}
+	}
+}
 
 
 //Commenting this section out to be consistent with FPS BP template.
@@ -615,8 +573,6 @@ void ASlasherCharacter::MoveRight(float Value)
 		{
 			AddMovementInput(GetActorRightVector(), Value);
 		}
-		
-		
 	}
 }
 
@@ -631,10 +587,6 @@ void ASlasherCharacter::LookUpAtRate(float Rate)
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
-
-
-
-
 
 
 //bool ASlasherCharacter::EnableTouchscreenMovement(class UInputComponent* PlayerInputComponent)
@@ -657,13 +609,16 @@ void ASlasherCharacter::LookUpAtRate(float Rate)
 void ASlasherCharacter::InteractTrace()
 {
 	FVector StartPos = FirstPersonCameraComponent->GetComponentLocation();
-	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->TraceDistance;
+	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->
+		TraceDistance;
 	FVector EndPos = StartPos + CameraRotForwardVector;
 
-	
-	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None, PlayerDataAsset->TraceDistance, 1.0f);
 
-	if (DebugTrace.bBlockingHit && DebugTrace.Actor->GetClass()->ImplementsInterface(UBPI_PlayerToInteractable::StaticClass()))
+	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None,
+	                                                            PlayerDataAsset->TraceDistance, 1.0f);
+
+	if (DebugTrace.bBlockingHit && DebugTrace.Actor->GetClass()->ImplementsInterface(
+		UBPI_PlayerToInteractable::StaticClass()))
 	{
 		AActor* InteractedActor = DebugTrace.GetActor();
 		IBPI_PlayerToInteractable* InteractableActor = Cast<IBPI_PlayerToInteractable>(DebugTrace.Actor);
@@ -673,23 +628,25 @@ void ASlasherCharacter::InteractTrace()
 
 void ASlasherCharacter::InteractHighlightTrace()
 {
-	
 	//FVector CameraPos = FirstPersonCameraComponent->GetComponentLocation();
 	//FVector CameraDir = FirstPersonCameraComponent->GetForwardVector() * 10000.0f;
 
 	FVector StartPos = FirstPersonCameraComponent->GetComponentLocation();
-	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->TraceDistance;
+	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->
+		TraceDistance;
 	FVector EndPos = StartPos + CameraRotForwardVector;
 
-	
-	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None, PlayerDataAsset->TraceDistance, 1.0f);
+
+	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None,
+	                                                            PlayerDataAsset->TraceDistance, 1.0f);
 
 	// Implemented the interact trace from Awakening Interact Manager, this is BP code manually converted to cpp; it works? Good enough.
 	//This works by declaring Interact Hit Actor In Character.h, it defines it on SetCustomDepthOn, If it doesnt block hit or hits a different
 	//Actor, it calls SetCustomDepthFilterOff. 
 	if (DebugTrace.bBlockingHit)
 	{
-		if (DebugTrace.GetActor()!= nullptr && DebugTrace.GetActor()->GetClass()->ImplementsInterface(UBPI_PlayerToInteractable::StaticClass()))
+		if (DebugTrace.GetActor() != nullptr && DebugTrace.GetActor()->GetClass()->ImplementsInterface(
+			UBPI_PlayerToInteractable::StaticClass()))
 		{
 			if (InteractHitActor != nullptr)
 			{
@@ -701,7 +658,6 @@ void ASlasherCharacter::InteractHighlightTrace()
 				}
 				else
 				{
-					
 					IBPI_PlayerToInteractable* IPTI = Cast<IBPI_PlayerToInteractable>(InteractHitActor);
 					IPTI->Execute_PlayerToInteractable_CustomDepthFilterOff(InteractHitActor);
 					InteractHitActor = DebugTrace.GetActor();
@@ -713,8 +669,6 @@ void ASlasherCharacter::InteractHighlightTrace()
 				IBPI_PlayerToInteractable* IPTI = Cast<IBPI_PlayerToInteractable>(InteractHitActor);
 				IPTI->Execute_PlayerToInteractable_CustomDepthFilterOn(InteractHitActor);
 			}
-				
-			
 		}
 		else
 		{
@@ -724,7 +678,6 @@ void ASlasherCharacter::InteractHighlightTrace()
 				IPTI->Execute_PlayerToInteractable_CustomDepthFilterOff(InteractHitActor);
 				InteractHitActor = nullptr;
 			}
-		
 		}
 	}
 	else
@@ -738,22 +691,23 @@ void ASlasherCharacter::InteractHighlightTrace()
 	}
 }
 
-void ASlasherCharacter::PlayerToEnemy_AttackSuccessful(float HitDamage)
+void ASlasherCharacter::PlayerToEnemy_AttackTrace(EDamageType DamageType, float WeaponDamage)
 {
-	
-	FVector StartPos = FirstPersonCameraComponent->GetComponentLocation();
-	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->TraceDistance;
-	FVector EndPos = StartPos + CameraRotForwardVector;
+	//FVector StartPos = FirstPersonCameraComponent->GetComponentLocation();
+	//FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * PlayerDataAsset->
+	//	TraceDistance;
+	//FVector EndPos = StartPos + CameraRotForwardVector;
 
-	
-	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None, PlayerDataAsset->TraceDistance, 1.0f);
 
-	if (DebugTrace.bBlockingHit && DebugTrace.Actor->GetClass()->ImplementsInterface(UBPI_PlayerToEnemy::StaticClass()))
-	{
-		AActor* InteractedActor = DebugTrace.GetActor();
-		IBPI_PlayerToEnemy* InteractableActor = Cast<IBPI_PlayerToEnemy>(DebugTrace.Actor);
-		InteractableActor->Execute_PlayerToEnemyInterface_Attack(InteractedActor, HitDamage);
-	}
+	//FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None,
+	//                                                            PlayerDataAsset->TraceDistance, 1.0f);
+
+	//if (DebugTrace.bBlockingHit && DebugTrace.Actor->GetClass()->ImplementsInterface(UBPI_PlayerToEnemy::StaticClass()))
+	//{
+	//	AActor* InteractedActor = DebugTrace.GetActor();
+	//	IBPI_PlayerToEnemy* InteractableActor = Cast<IBPI_PlayerToEnemy>(DebugTrace.Actor);
+	//	InteractableActor->Execute_PlayerToEnemyInterface_Attack(InteractedActor, EDamageType::DirectDamage_Physical,WeaponDamage);
+	//}
 }
 
 void ASlasherCharacter::DebugItemTrace()
@@ -762,13 +716,13 @@ void ASlasherCharacter::DebugItemTrace()
 	FVector CameraRotForwardVector = FirstPersonCameraComponent->GetComponentRotation().Vector() * 10000.0f;
 	FVector EndPos = StartPos + CameraRotForwardVector;
 
-	
-	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None, 10000.0f, 1.0f);
 
-	if (DebugTrace.bBlockingHit&& DebugTrace.Actor != nullptr)
+	FHitResult DebugTrace = AbilityComponent->
+		Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None, 10000.0f, 1.0f);
+
+	if (DebugTrace.bBlockingHit && DebugTrace.Actor != nullptr)
 	{
 		DebugActorComponent->DisplayDebug_Item(&DebugTrace); // Hopefully Working LOL
-
 	}
 }
 
@@ -791,23 +745,24 @@ void ASlasherCharacter::AddItemToInventory(int ItemIDToAdd)
 			}
 			else
 			{
-				UE_LOG(LogTemp, Display, TEXT("NotEmptySlot Slot Found at Index: %d"), i);
+				
 			}
+			UE_LOG(LogTemp, Display, TEXT("SlasherCharacter.cpp -- AddItemToInventory() -- Item Found at Slot Found at Index: %d"), i);
 		}
 	}
-	
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, "Adding item to inventory: --" + FString::FromInt(ItemIDToAdd));
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan,
+	                                 "Adding item to inventory: --" + FString::FromInt(ItemIDToAdd));
 }
 
 void ASlasherCharacter::RemoveItemFromInventory(int ItemIDToRemove)
 {
 	//Todo -- Remove Item From Inventory
-	
 }
 
 void ASlasherCharacter::SlasherCharacter_TakeDamage(float DamageTaken)
 {
-	CurrentHealth = CurrentHealth-DamageTaken;
+	CurrentHealth = CurrentHealth - DamageTaken;
 	if (CurrentHealth <= 0)
 	{
 		DeathOfCharacter();
@@ -819,7 +774,7 @@ void ASlasherCharacter::DeathOfCharacter()
 	GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Black, "DEATH OF CHARACTER");
 }
 
-void ASlasherCharacter::BeginPlay_SetLevel()// TODO - Rename this function for better clarity. Level As in EXP. 
+void ASlasherCharacter::BeginPlay_SetLevel() // TODO - Rename this function for better clarity. Level As in EXP. 
 {
 	Level = 1;
 	//Todo -- Set This so that the level cap caps at Some assigned level. 
@@ -836,7 +791,7 @@ void ASlasherCharacter::BeginPlay_SetLevel()// TODO - Rename this function for b
 
 			const FString ContextString(TEXT("Experience Data Context"));
 			TArray<FName> RowNames = ExperienceDataTable->GetRowNames();
-        
+
 			for (const FName& RowName : RowNames)
 			{
 				FLevelUpStruct* Row = ExperienceDataTable->FindRow<FLevelUpStruct>(RowName, ContextString);
@@ -855,19 +810,19 @@ void ASlasherCharacter::BeginPlay_SetLevel()// TODO - Rename this function for b
 				}
 			}
 
-			
-			
+
 			SlasherGI->GI_CurrentLevel += LevelCounter;
-			
-			
+
+
 			CurrentExperience = SlasherGI->GI_CurrentExperience;
 			Level = SlasherGI->GI_CurrentLevel;
 			BeginPlay_SetBaseAttributes();
-			SetupEquipmentAttributes();// Set the Player Pawn Level
+			EquipmentComponent->SetupEquipmentAttributes(); // Set the Player Pawn Level
 		}
 	}
 }
-		//Define The Base St
+
+//Define The Base St
 
 
 void ASlasherCharacter::BeginPlay_SetBaseAttributes()
@@ -876,22 +831,20 @@ void ASlasherCharacter::BeginPlay_SetBaseAttributes()
 	const FString ContextString(TEXT("Experience Data Context"));
 	FString SetStats = FString::FromInt(Level);
 	FName RowName = FName(*SetStats);
-		
-		
+
+
 	FLevelUpStruct* Row = ExperienceDataTable->FindRow<FLevelUpStruct>(RowName, ContextString);
 	if (Row)
 	{
-		
-		
 		MaxHealth = Row->BaseHealthAtLevel + FromEquipment_Health;
 		CurrentHealth = MaxHealth;
-		MaxMana = Row->BaseManaAtLevel+ FromEquipment_Mana;
+		MaxMana = Row->BaseManaAtLevel + FromEquipment_Mana;
 		CurrentMana = MaxMana;
 
 		Base_Damage = 1.0f;
 		Base_MagicDamageMod = Row->BaseMagicDmgModAtLevel;
 		Base_AttackSpeed = Row->BaseAttackSpeedAtLevel;
-			
+
 		Base_Armor = Row->BaseArmorAtLevel;
 		Base_Strength = Row->BaseStrengthAtLevel;
 		Base_Stamina = Row->BaseStaminaAtLevel;
@@ -899,7 +852,7 @@ void ASlasherCharacter::BeginPlay_SetBaseAttributes()
 		Base_Intelligence = Row->BaseIntelligenceAtLevel;
 
 		Base_Resist_Fire = Row->BaseFireResistAtLevel;
-		Base_Resist_Cold = Row ->BaseColdResistAtLevel;
+		Base_Resist_Cold = Row->BaseColdResistAtLevel;
 		Base_Resist_Fire = Row->BaseFireResistAtLevel;
 		Base_Resist_Detrimental = Row->BaseDetrimentalResistAtLevel;
 		Base_Resist_Divine = Row->BaseDivineResistAtLevel;
@@ -917,24 +870,17 @@ void ASlasherCharacter::BeginPlay_SetBaseAttributes()
 		Total_Intelligence = Base_Intelligence + FromEquipment_Intelligence;
 
 		Total_Resist_Fire = Base_Resist_Fire + FromEquipment_Resist_Fire;
-		Total_Resist_Cold= Base_Resist_Cold + FromEquipment_Resist_Cold;
+		Total_Resist_Cold = Base_Resist_Cold + FromEquipment_Resist_Cold;
 		Total_Resist_Detrimental = Base_Resist_Detrimental + FromEquipment_Resist_Detrimental;
 		Total_Resist_Divine = Base_Resist_Divine + FromEquipment_Resist_Divine;
-		
 
 
-
-
-		
-
-		
-		
 		UWorld* World = GetWorld();
 		if (World != nullptr)
 		{
 			USlasherGameInstance* SlasherGI = World->GetGameInstance<USlasherGameInstance>();
 			CurrentExperience = SlasherGI->GI_CurrentExperience;
-			ExperienceToNextLevel = Row->ExperienceToNextLevel;	
+			ExperienceToNextLevel = Row->ExperienceToNextLevel;
 		}
 	}
 }
@@ -942,17 +888,16 @@ void ASlasherCharacter::BeginPlay_SetBaseAttributes()
 
 void ASlasherCharacter::testFunc_SetBaseVars()
 {
-	
 }
 
 void ASlasherCharacter::testFunc_SetupEquipmentPassives() // NotFinished. 
 {
 	UWorld* World = GetWorld();
 	USlasherGameInstance* SlasherGI = Cast<USlasherGameInstance>(World->GetGameInstance());
-	
+
 	//Check Helm
-//	FString Helm_00_ItemIDToString = FString::FromInt(SlasherGI->Equipment[0]);
-//	FName Helm_00_RowName = FName(*Helm_00_ItemIDToString);
+	//	FString Helm_00_ItemIDToString = FString::FromInt(SlasherGI->Equipment[0]);
+	//	FName Helm_00_RowName = FName(*Helm_00_ItemIDToString);
 
 	for (int i = 0; i < SlasherGI->Equipment.Num(); i++)
 	{
@@ -963,248 +908,11 @@ void ASlasherCharacter::testFunc_SetupEquipmentPassives() // NotFinished.
 			FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
 			if (LookupItemStruct->bHasOnEquipPassive)
 			{
-				SwitchOnEquipPassive(LookupItemStruct->OnEquipPassive);
+				EquipmentComponent->SwitchOnEquipPassive(LookupItemStruct->OnEquipPassive);
 			}
 		}
 	}
-	
 }
-
-void ASlasherCharacter::SetupEquipmentAttributes()
-{
-	
-	//Zero Out Bonuses From Equipment for 1-frame //Possible Error but will optimize later if needed. 
-	FromEquipment_Health = 0;
-	FromEquipment_Mana = 0;
-	//Guard Not Implemented
-
-	FromEquipment_Damage = 0;
-	FromEquipment_MagicDamageMod = 0;
-	FromEquipment_AttackSpeed = 0;
-	
-	FromEquipment_Strength = 0;
-	FromEquipment_Stamina = 0;
-	FromEquipment_Dexterity = 0;
-	FromEquipment_Intelligence = 0;
-
-	FromEquipment_Resist_Fire = 0;
-	FromEquipment_Resist_Cold = 0;
-	FromEquipment_Resist_Detrimental = 0;
-	FromEquipment_Resist_Divine = 0;
-	
-	//Set Attributes
-
-	Total_Strength = Base_Strength;
-	Total_Stamina = Base_Stamina;
-	Total_Dexterity = Base_Dexterity;
-	Total_Intelligence = Base_Intelligence;
-	
-	Total_Resist_Fire = Base_Resist_Fire;
-	Total_Resist_Cold = Base_Resist_Cold;
-	Total_Resist_Detrimental = Base_Resist_Detrimental;
-	Total_Resist_Divine = Base_Resist_Divine;
-
-	UWorld* World = GetWorld();
-	if (World != nullptr)
-	{
-		USlasherGameInstance* SlasherGI = Cast<USlasherGameInstance>(World->GetGameInstance());
-		for (int i = 0; i < SlasherGI->Equipment.Num(); i++)
-		{
-			FString IndexNum= FString::FromInt(i);
-			FName RowName = FName(*IndexNum);
-			if (ItemDataTable->GetRowNames().Contains(RowName))
-			{
-				//Loop Over Equipment and add stats to FromEquipment vars. 
-				FItemStruct* ItemStruct =ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
-				FromEquipment_Health += ItemStruct->Health;
-				FromEquipment_Mana += ItemStruct->Mana;
-				//Todo - Add Guard?
-				FromEquipment_Damage += ItemStruct->Damage;
-				FromEquipment_AttackSpeed += ItemStruct->AttackSpeed;
-				FromEquipment_MagicDamageMod += ItemStruct->MagicDmgMod;
-
-				FromEquipment_Strength += ItemStruct->Strength;
-				FromEquipment_Stamina += ItemStruct->Stamina;
-				FromEquipment_Dexterity += ItemStruct->Dexterity;
-				FromEquipment_Intelligence += ItemStruct->Intelligence;
-
-				FromEquipment_Resist_Fire += ItemStruct->Resist_Fire;
-				FromEquipment_Resist_Cold += ItemStruct->Resist_Cold;
-				FromEquipment_Resist_Detrimental += ItemStruct->Resist_Detrimental;
-				FromEquipment_Resist_Divine += ItemStruct->Resist_Divine;
-				
-
-
-				
-			}
-		}
-		//End Loop
-		Total_Strength = Base_Strength + FromEquipment_Strength;
-		Total_Stamina = Base_Stamina + FromEquipment_Stamina;
-		Total_Dexterity = Base_Dexterity + FromEquipment_Dexterity;
-		Total_Intelligence = Base_Intelligence + FromEquipment_Intelligence;
-
-		Total_Resist_Fire = Base_Resist_Fire + FromEquipment_Resist_Fire;
-		Total_Resist_Cold = Base_Resist_Cold + FromEquipment_Resist_Cold;
-		Total_Resist_Detrimental = Base_Resist_Detrimental + FromEquipment_Resist_Detrimental;
-		Total_Resist_Divine = Base_Resist_Divine + FromEquipment_Resist_Divine;
-
-		
-	}
-}
-
-void ASlasherCharacter::SwitchOnEquipPassive(EOnEquipPassive PassiveEffect)
-{
-	//Equipment Stat Zeros if needed
-	// TODO - Add These Stats To Character.h and imguidebugactor.cpp to reflect new character window. 
-	// Set HP Regen From Gear = 0
-
-	//Zero Out Bonuses From Armor
-	FromEquipment_Health = 0;
-	FromEquipment_Mana = 0;
-	//Guard Not Implemented
-
-	FromEquipment_Damage = 0;
-	FromEquipment_MagicDamageMod = 0;
-	FromEquipment_AttackSpeed = 0;
-	
-	FromEquipment_Strength = 0;
-	FromEquipment_Dexterity = 0;
-	FromEquipment_Intelligence = 0;
-
-	FromEquipment_Resist_Fire = 0;
-	FromEquipment_Resist_Cold = 0;
-	FromEquipment_Resist_Detrimental = 0;
-	FromEquipment_Resist_Divine = 0;
-	
-	//Set Attributes
-
-	Total_Strength = Base_Strength;
-	Total_Stamina = Base_Stamina;
-	Total_Dexterity = Base_Dexterity;
-	Total_Intelligence = Base_Intelligence;
-	
-	Total_Resist_Fire = Base_Resist_Fire;
-	Total_Resist_Cold = Base_Resist_Cold;
-	Total_Resist_Detrimental = Base_Resist_Detrimental;
-	Total_Resist_Divine = Base_Resist_Divine;
-	
-	//Set Regeneration Effects
-	Total_HP_Regeneration = Base_HP_Regeneration;
-	FromEquipment_HP_Regeneration = 0.0f;
-	Total_MP_Regeneration = Base_MP_Regeneration;
-	FromEquipment_MP_Regeneration = 0.0f;
-	Total_Guard_Regeneration = Base_Guard_Regeneration;
-	FromEquipment_Guard_Regeneration = 0.0f;
-
-	
-
-	
-	
-	//Boolean Sets for Passive Gear -- This is for Stop All Casting Passive 
-	bCanCast = true; //This is a temp solution to correct if we unequip silence mechanic item, which will set onEquip Below.
-
-	
-	switch (PassiveEffect)
-	{ 
-		
-	case EOnEquipPassive::Null:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: Null"));
-			break;
-		}
-		
-	case EOnEquipPassive::HPRegeneration_Small:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: HPRegeneration - Small"));
-			//AbilityDataTable
-			//Todo - Add Buff Icons - Remove Buff Icons?? If I want to Have Icons
-			break;
-		}
-	case EOnEquipPassive::HPRegeneration_Medium:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: HPRegeneration - Med"));
-			//AbilityComponent->ExecuteAbilityID() -- Todo LinkToAbilityComponent
-			break;
-		}
-	case EOnEquipPassive::HPRegeneration_Large:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: HPRegeneration - Large"));
-			break;
-		}
-	case EOnEquipPassive::ManaRegeneration_Small:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: Mana Regen - Small"));
-			break;
-		}
-	case EOnEquipPassive::ManaRegeneration_Medium:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: Mana Regen - Medium"));
-			break;
-		}
-	case EOnEquipPassive::ManaRegeneration_Large:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: Mana Regen - Large"));
-			break;
-		}
-	case EOnEquipPassive::MovementSpeed_Small:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: MovementSpeed - Small"));
-			break;
-		}
-	case EOnEquipPassive::MovementSpeed_Medium:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: MovementSpeed - Medium"));
-			break;
-		}
-	case EOnEquipPassive::MovementSpeed_Large:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: MovementSpeed - Large"));
-			break;
-		}
-	case EOnEquipPassive::DrainHP_Small:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: DrainHP_Small"));
-			break;
-		}
-	case EOnEquipPassive::DrainHP_Medium:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: DrainHP_Medium"));
-			break;
-		}
-	case EOnEquipPassive::DrainHP_Large:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: DrainHP_Large"));
-			break;
-		}
-	case EOnEquipPassive::GuardRegen_Small:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: GuardRegen - Small"));
-			break;
-		}
-	case EOnEquipPassive::GuardRegen_Medium:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: GuardRegen - Medium"));
-			break;
-		}
-	case EOnEquipPassive::GuardRegen_Large:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: GuardRegen - Large"));
-			break;
-		}
-	case EOnEquipPassive::DisableAllCasting:
-		{
-			UE_LOG(LogTemp, Display, TEXT("SwitchOnEquipPassive: Disable All Casting"));
-			break;
-		}
-	}//end switch
-
-
-	
-}
-
-
-//
 
 
 void ASlasherCharacter::EquipItemID(int EquippedItemID)
@@ -1217,54 +925,54 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 		{
 			FString ItemIDToString = FString::FromInt(EquippedItemID);
 			FName RowName = FName(*ItemIDToString);
-			
+
 			if (ItemDataTable->GetRowNames().Contains(RowName))
 			{
 				FItemStruct* EquippedItemRef = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("EquippedItem"));
 				switch (EquippedItemRef->EquipSlot)
 				{
-					case EEquipmentSlot::Null:
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("EquippedItem: Null"));
-						break;
+				case EEquipmentSlot::Null:
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("EquippedItem: Null"));
+					break;
 
-					//Switch Statement Helm.
-					case EEquipmentSlot::Helm:
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Helm"));
-							if (SlasherGI->Equipment[0]>0)
-							{
-							//Slot is occupied, Add existing item to Inventory, Then Equip Item
-							AddItemToInventory(EquippedItemID);
-							SlasherGI->Equipment.Insert(EquippedItemID, 0);
-							}
-							else
-							{
-							//Slot is Empty, Just Add Item to Inventory 
-							SlasherGI->Equipment.Insert(EquippedItemID, 0);
-							}
-						break;
-
-					//Switch Statement Chest.
-					case EEquipmentSlot::Chest:
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Chest"));
-							if (SlasherGI->Equipment[1]>0)
-								{
-							//Slot is occupied, Add existing item to Inventory, Then Equip Item
-								AddItemToInventory(EquippedItemID);
-								SlasherGI->Equipment.Insert(EquippedItemID, 1);
-								}
-							else
-								{
+				//Switch Statement Helm.
+				case EEquipmentSlot::Helm:
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Helm"));
+					if (SlasherGI->Equipment[0] > 0)
+					{
+						//Slot is occupied, Add existing item to Inventory, Then Equip Item
+						AddItemToInventory(EquippedItemID);
+						SlasherGI->Equipment.Insert(EquippedItemID, 0);
+					}
+					else
+					{
 						//Slot is Empty, Just Add Item to Inventory 
-								SlasherGI->Equipment.Insert(EquippedItemID, 1);
-								}
-						break;
+						SlasherGI->Equipment.Insert(EquippedItemID, 0);
+					}
+					break;
 
-					//Switch Statement Arms
+				//Switch Statement Chest.
+				case EEquipmentSlot::Chest:
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Chest"));
+					if (SlasherGI->Equipment[1] > 0)
+					{
+						//Slot is occupied, Add existing item to Inventory, Then Equip Item
+						AddItemToInventory(EquippedItemID);
+						SlasherGI->Equipment.Insert(EquippedItemID, 1);
+					}
+					else
+					{
+						//Slot is Empty, Just Add Item to Inventory 
+						SlasherGI->Equipment.Insert(EquippedItemID, 1);
+					}
+					break;
+
+				//Switch Statement Arms
 				case EEquipmentSlot::Arms:
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Arms"));
-					if (SlasherGI->Equipment[2]>0)
+					if (SlasherGI->Equipment[2] > 0)
 					{
-							//Slot is occupied, Add existing item to Inventory, Then Equip Item
+						//Slot is occupied, Add existing item to Inventory, Then Equip Item
 						AddItemToInventory(EquippedItemID);
 						SlasherGI->Equipment.Insert(EquippedItemID, 2);
 					}
@@ -1276,10 +984,10 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 					break;
 
 
-					//Switch Statement Legs
+				//Switch Statement Legs
 				case EEquipmentSlot::Legs:
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Legs"));
-					if (SlasherGI->Equipment[3]>0)
+					if (SlasherGI->Equipment[3] > 0)
 					{
 						//Slot is occupied, Add existing item to Inventory, Then Equip Item
 						AddItemToInventory(EquippedItemID);
@@ -1292,10 +1000,10 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 					}
 					break;
 
-					//Switch Statement Boots
+				//Switch Statement Boots
 				case EEquipmentSlot::Boots:
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Boots"));
-					if (SlasherGI->Equipment[4]>0)
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Boots"));
+					if (SlasherGI->Equipment[4] > 0)
 					{
 						//Slot is occupied, Add existing item to Inventory, Then Equip Item
 						AddItemToInventory(EquippedItemID);
@@ -1306,12 +1014,12 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 						//Slot is Empty, Just Add Item to Inventory 
 						SlasherGI->Equipment.Insert(EquippedItemID, 4);
 					}
-						break;
+					break;
 
-					//Switch Statement Ring
+				//Switch Statement Ring
 				case EEquipmentSlot::Ring:
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Ring"));
-					if (SlasherGI->Equipment[5]>0)
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Ring"));
+					if (SlasherGI->Equipment[5] > 0)
 					{
 						//Slot is occupied, Add existing item to Inventory, Then Equip Item
 						AddItemToInventory(EquippedItemID);
@@ -1322,49 +1030,47 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 						//Slot is Empty, Just Add Item to Inventory 
 						SlasherGI->Equipment.Insert(EquippedItemID, 5);
 					}
-						break;
+					break;
 
-					//Switch Statement Primary
+				//Switch Statement Primary
 				case EEquipmentSlot::Primary:
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Primary"));
-					if (SlasherGI->Equipment[6]>0)
-					{
-						//Slot is occupied, Add existing item to Inventory, Then Equip Item
-						AddItemToInventory(EquippedItemID);
-						SlasherGI->Equipment.Insert(EquippedItemID, 6);
-						EquipItem_Primary(EquippedItemID);
-					}
-					else
-					{
-						//Slot is Empty, Just Add Item to Inventory 
-						SlasherGI->Equipment.Insert(EquippedItemID, 6);
-						EquipItem_Primary(EquippedItemID);
-					}
-						break;
+					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Primary"));
+						if (SlasherGI->Equipment[6] > 0)
+						{
+							UE_LOG(LogTemp, Display, TEXT("EquipItemID: Primary Slot is occupied, Add existing item to Inventory, Then Equip Item"));
+							AddItemToInventory(SlasherGI->Equipment[6]); // Add the old item to inventory
+							SlasherGI->Equipment[6] = EquippedItemID;    // Replace the item at index 6
+							EquipmentComponent->EquipItem_SpawnEquipMesh(0, EquippedItemID);         // Equip the new item
+						}
+						else
+						{
+							SlasherGI->Equipment[6] = EquippedItemID;    // Slot is empty, just assign
+							EquipmentComponent->EquipItem_SpawnEquipMesh(0, EquippedItemID);
+						}
 
 
-					//Switch Statement Secondary
+				//Switch Statement Secondary
 				case EEquipmentSlot::Secondary:
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: Secondary"));
-					if (SlasherGI->Equipment[7]>0)
+					if (SlasherGI->Equipment[7] > 0)
 					{
 						AddItemToInventory(EquippedItemID);
 						SlasherGI->Equipment.Insert(EquippedItemID, 7);
-						EquipItem_Secondary(EquippedItemID);
+						EquipmentComponent->EquipItem_SpawnEquipMesh(1, EquippedItemID);
 					}
 					else
 					{
 						//Slot is Empty, Just Add Item to Inventory 
 						SlasherGI->Equipment.Insert(EquippedItemID, 7);
-						EquipItem_Secondary(EquippedItemID);
+						EquipmentComponent->EquipItem_SpawnEquipMesh(1, EquippedItemID);
 					}
-						break;
+					break;
 
 
-					//Switch Statement UsableItem.
+				//Switch Statement UsableItem.
 				case EEquipmentSlot::UsableItem:
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, TEXT("EquippedItem: UsableItem"));
-					if (SlasherGI->Equipment[8]>0)
+					if (SlasherGI->Equipment[8] > 0)
 					{
 						AddItemToInventory(EquippedItemID);
 						SlasherGI->Equipment.Insert(EquippedItemID, 8);
@@ -1380,42 +1086,11 @@ void ASlasherCharacter::EquipItemID(int EquippedItemID)
 	}
 }
 
-
-void ASlasherCharacter::EquipItem_Primary(int PrimaryItemIDToEquip)
+void ASlasherCharacter::BeginPlay_RegisterEquipment()
 {
 	
-	FName RowName = FName(FString::FromInt(PrimaryItemIDToEquip));
-	
-	if (ItemDataTable->GetRowNames().Contains(RowName))
-	{
-		FItemStruct* ItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName,TEXT ("PrimaryItemIDtoEquip"));
-		if (ItemStruct->EquipSlot == EEquipmentSlot::Primary)
-		{
-			
-			PrimaryItemMesh->SetStaticMesh(ItemStruct->ItemDisplayMesh);
-			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipName = ItemStruct->ItemName;
-			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipDescription = "Item Spawn Was Successful";
-		}
-		else
-		{
-			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipName = ItemStruct->ItemName;
-			DebugActorComponent->EquipItemTextDisplay_PrimaryEquipDescription = "Item Spawn Is Not a Primary Equip Slot Item";
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("EquipItem_Primary: EquipSlot is not Primary"));
-			
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Display, TEXT("SlasherCharacter.cpp() - Equip Item ID Does not Have a Viable RowName"))
-	}
 }
 
-
-
-void ASlasherCharacter::EquipItem_Secondary(int SecondaryItemIDToEquip)
-{
- //Todo - Implement Equip Secondary once Primary is Set UP. 
-}
 
 
 //User Interface functions
@@ -1426,18 +1101,16 @@ void ASlasherCharacter::BeginPlay_CreateInventoryWidgets()
 
 void ASlasherCharacter::ToggleInventoryWidget()
 {
-
 }
-
 
 
 void ASlasherCharacter::RotatingMenuItem_SetBaseRotation(float Rotation)
 {
-	
 	if (RotatingMenuItemStaticMesh)
 	{
 		FRotator CurrentRotation = RotatingMenuItemStaticMesh->GetRelativeRotation();
-		CurrentRotation.Yaw += Rotation * GetWorld()->GetDeltaSeconds(); // Rotation speed is determined by the `Rotation` parameter.
+		CurrentRotation.Yaw += Rotation * GetWorld()->GetDeltaSeconds();
+		// Rotation speed is determined by the `Rotation` parameter.
 		RotatingMenuItemStaticMesh->SetRelativeRotation(CurrentRotation);
 	}
 }
@@ -1479,7 +1152,6 @@ void ASlasherCharacter::SetCrouchHeight(float Alpha)
 	{
 		float SetCapHalfHeight = FMath::Lerp(PlayerDataAsset->StandingHeight, PlayerDataAsset->CrouchHeight, Alpha);
 		CapsuleComp->SetCapsuleHalfHeight(SetCapHalfHeight, false);
-		
 	}
 }
 
@@ -1501,11 +1173,11 @@ void ASlasherCharacter::DebugCharacterPrintString(const FColor StringColor, cons
 
 void ASlasherCharacter::DebugCharacterPrintString_Error(const FString& String) const
 {
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Red, String);
-			UE_LOG(LogTemp, Error, TEXT("SlasherCharacter.cpp() - Error: %s"), *String);
-		}
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Red, String);
+		UE_LOG(LogTemp, Error, TEXT("SlasherCharacter.cpp() - Error: %s"), *String);
+	}
 }
 
 
@@ -1527,145 +1199,143 @@ void ASlasherCharacter::FootStepAudioLineTrace(int FootIndex)
 	FHitResult Hit;
 	TArray<AActor*> ActorsToIgnore;
 
-	
+
 	const bool bHit = UKismetSystemLibrary::LineTraceSingle(
-	this,
-	StartLocation,
-	EndLocation,
-	UEngineTypes::ConvertToTraceType(ECC_Visibility),
-	false,
-	ActorsToIgnore,
-	EDrawDebugTrace::ForDuration,Hit,
-	true,
-	FLinearColor::Red,
-	FLinearColor::Green,
-	10.0f
+		this,
+		StartLocation,
+		EndLocation,
+		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration, Hit,
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		10.0f
 	);
 
 	if (bHit)
 	{
-		BPAudioEvent_LeftFootStepAudio();
 		switch (Hit.PhysMaterial->SurfaceType)
 		{
-			default:
+		default:
 			{
-					
 				break;
 			}
-		
-		
+
+
 		case SurfaceType_Default:
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Default);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Default);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Default);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Default);
+				}
 				break;
 			}
-		
+
 		case SurfaceType1: // Wood
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Wood);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Wood);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Wood);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Wood);
+				}
 				break;
 			}
 		case SurfaceType2: // Stone
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Stone);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Stone);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Stone);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Stone);
+				}
 				break;
 			}
 
 		case SurfaceType3: // Metal
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Metal);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Metal);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Metal);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Metal);
+				}
 				break;
 			}
 
 		case SurfaceType4: // Water
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Water);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Water);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Water);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Water);
+				}
 				break;
 			}
-	
+
 		case SurfaceType5: // Glass
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Glass);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Glass);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Glass);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Glass);
+				}
 				break;
 			}
-		
+
 		case SurfaceType6: // Grass
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Grass);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Grass);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Grass);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Grass);
+				}
 				break;
 			}
-	
+
 		case SurfaceType7: // Slime
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Slime);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Slime);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Slime);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Slime);
+				}
 				break;
 			}
 		case SurfaceType8: //Lava
 			{
-					if (FootIndex == 0)
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Lava);
-					}
-					else
-					{
-						PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Lava);
-					}
+				if (FootIndex == 0)
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepLeft_Lava);
+				}
+				else
+				{
+					PlayFootStepSoundAtLocation(Hit.Location, PlayerDataAsset->FootStepRight_Lava);
+				}
 				break;
 			}
 		}
@@ -1675,17 +1345,15 @@ void ASlasherCharacter::FootStepAudioLineTrace(int FootIndex)
 
 void ASlasherCharacter::PlayFootStepSoundAtLocation(FVector Location, USoundBase* SoundToPlay)
 {
-	
 	float VolRand = FMath::FRandRange(0.7f, 1.0f);
 	float PitchRand = FMath::FRandRange(0.9f, 1.1f);
-	UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, Location, VolRand, PitchRand,0.0f, PlayerDataAsset->FootStep_SoundAttenuation);
-	
+	UGameplayStatics::PlaySoundAtLocation(this, SoundToPlay, Location, VolRand, PitchRand, 0.0f,
+	                                      PlayerDataAsset->FootStep_SoundAttenuation);
 }
 
 
 void ASlasherCharacter::StartSprint()
 {
-	
 	bIsSprinting = true;
 	if (bDebug_DevSprint)
 	{
@@ -1695,16 +1363,13 @@ void ASlasherCharacter::StartSprint()
 	{
 		GetCharacterMovement()->MaxWalkSpeed = PlayerDataAsset->SprintSpeed;
 	}
-	
 }
 
 
 void ASlasherCharacter::EndSprint()
 {
-	
 	GetCharacterMovement()->MaxWalkSpeed = PlayerDataAsset->BaseMovementSpeed;
 	bIsSprinting = false;
-	
 }
 
 
@@ -1712,4 +1377,9 @@ void ASlasherCharacter::JumpPressWhileSwimming()
 {
 	FVector UpSwim = GetActorUpVector();
 	AddMovementInput(UpSwim, 1.0f);
+}
+
+void ASlasherCharacter::AnimNotify_AttackWindowStart()
+{
+	
 }

@@ -13,5 +13,4 @@ UCLASS()
 class SLASHER_API UEquipmentContextWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
 };

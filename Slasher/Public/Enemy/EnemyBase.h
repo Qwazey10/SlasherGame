@@ -21,7 +21,7 @@ class SLASHER_API AEnemyBase : public ACharacter, public IBPI_PlayerToEnemy
 public:
 	// Constructor
 	AEnemyBase();
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Appearance")
 	USkeletalMeshComponent* BaseMesh;
 
@@ -39,8 +39,25 @@ public:
 	float CurrentMana = 420;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
-	float Armor = 10;
+	float EnemyBaseArmor = 10;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyBaseResistFire = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyBaseResistCold = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyBaseResistDetrimental = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyBaseResistDivine = 0;
+
+	//Status Buildup
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyStatPoisonBuildup = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyStatBurnBuildup = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	float EnemyStatBleedBuildup = 0.0f;
+	
 	//AI
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
 	EEnemyAIAgentState CurrentState = EEnemyAIAgentState::None;
@@ -55,12 +72,12 @@ public:
 	float CurrentStateCooldown = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
 	float CurrentStateTickRate = 0.0f;
-	
+
 	FTimerHandle StateChangeTimerHandle;
 
 	void CheckAIStateChange() const;
 	void StartCheckStateChangeTimer();
-	
+
 	//Enemy Actor Components. 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actor Components")
 	UAC_AbilityComponent* AbilityComponent;
@@ -72,16 +89,28 @@ protected:
 	// Called when the game starts or when spawnedEditAnywhere
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	//BPI_PlayerToEnemy Interface Functions
-	virtual void PlayerToEnemyInterface_Attack_Implementation(float Damage) override;
-	
-	void DamageTaken(float DamageAmount, AActor* DamageInstigator, EDamageType DamageType);
+
+	virtual void PlayerToEnemyInterface_Attack_Implementation(AActor* InstigatingActor, float BaseWeaponDamage, EDamageType PrimaryDamageType,float PrimaryStatusAmt, EDamageType SecondaryDamageType, float SecondaryStatusAmt) override;
+
+	void DamageTaken(float DamageAmount, AActor* DamageInstigator, EDamageType PrimaryDamageType, float PrimaryDamageTypeStatusAmt, EDamageType SecondaryDamageType, float SecondaryDamageTypeStatusAmt);
 	void KillEnemyBase();
+
+	//Status Effect Functions
 	
+	//Burning
+	void TriggerBurningEffect();
+	//Bleeding Effect Trigger
+	void TriggerBleedingEffect();
+	//Poison Effect Trigger
+	void TriggerPoisonEffect();
+	//FrostEffectTrigger
+	void TriggerFrostEffect();
+
 };

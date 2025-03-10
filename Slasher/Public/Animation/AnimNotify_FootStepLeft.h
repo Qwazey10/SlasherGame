@@ -15,10 +15,7 @@ class SLASHER_API UAnimNotify_FootStepLeft : public UAnimNotify
 {
 	GENERATED_BODY()
 
-	
 public:
-	
 	// Called when the animation notifies
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
-	
 };

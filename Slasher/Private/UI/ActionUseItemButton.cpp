@@ -13,17 +13,13 @@
 void UActionUseItemButton::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	
 }
+
 /*
  *    Event Visibility Changed
  */
 void UActionUseItemButton::HandleNativeVisibilityChanged(ESlateVisibility InVisibility)
 {
-
-
-	
 }
 
 /*
@@ -35,7 +31,6 @@ FReply UActionUseItemButton::NativeOnPreviewMouseButtonDown(const FGeometry& InG
 	Super::NativeOnPreviewMouseButtonDown(InGeometry, InMouseEvent);
 
 
-	
 	return FReply::Unhandled();
 }
 
@@ -49,11 +44,11 @@ FReply UActionUseItemButton::NativeOnMouseButtonDown(const FGeometry& InGeometry
 		FString ClickedItemID = FString::FromInt(SlasherGI->GI_ClickedItemID);
 		FString ClickItemInvIndex = FString::FromInt(SlasherGI->GI_ClickedItemInventoryIndex);
 
-		GEngine ->AddOnScreenDebugMessage(-1,10,FColor::White, "ClickedItemID: " + ClickedItemID);
-		GEngine->AddOnScreenDebugMessage(-1,10,FColor::White, "ClickItemInvIndex: " + ClickItemInvIndex);
+		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::White, "ClickedItemID: " + ClickedItemID);
+		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::White, "ClickItemInvIndex: " + ClickItemInvIndex);
 	}
 
-	
+
 	return FReply::Handled();
 }
 
@@ -67,39 +62,30 @@ void UActionUseItemButton::NativeOnMouseEnter(const FGeometry& InGeometry, const
 
 	if (InventoryUIDataAsset != nullptr)
 	{
-		
 		UGameplayStatics::PlaySound2D(this, InventoryUIDataAsset->WidgetMouseHoverAudio);
-		
+
 		ForeGroundTexture->SetVisibility(ESlateVisibility::Visible);
-		
 	}
 	else
 	{
-		
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "UseItemContextButton::NativeOnMouseEnter -- DATA ASSET IS NOT VALID");
-		
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+		                                 "UseItemContextButton::NativeOnMouseEnter -- DATA ASSET IS NOT VALID");
 	}
 }
 
 void UActionUseItemButton::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseLeave(InMouseEvent);
-	
+
 	ForeGroundTexture->SetVisibility(ESlateVisibility::Hidden);
-	
-
 }
-
-
 
 
 /*
  *    OnDrag Event 
  */
 void UActionUseItemButton::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-	UDragDropOperation*& OutOperation)
+                                                UDragDropOperation*& OutOperation)
 {
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 }
-
-

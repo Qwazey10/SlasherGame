@@ -7,7 +7,11 @@ CREATE FPP hands in Blender. See if we can parent to Unreal skeleton and have it
 ADD Cheat menu - Dev Sprint, set sprint speed to something like 2000, can use a boolean on the shift press. 
 Add Jump height modifier. 
 
-ADD Crouch to character. 
+change door and item to be inherit from class AInteractable and build damage function there. 
 
 Create the basic assets for the first world. 
+
+Add Pickup Item and in pickup like half-life 2. 
+
+I changed the way that the bouyancy component is init in itemactor.cpp. Its erroring on the SimpleSuspension.cpp. 
 

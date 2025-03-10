@@ -14,13 +14,10 @@ UCLASS()
 class UInventoryUIDataAsset : public UPrimaryDataAsset
 {
 public:
-	
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	USoundCue* WidgetMouseHoverAudio;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	USoundCue* WidgetMouseClickAudio;
-
-	
 };

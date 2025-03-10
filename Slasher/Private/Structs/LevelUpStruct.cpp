@@ -6,10 +6,8 @@
 
 FLevelUpStruct::FLevelUpStruct()
 {
-	
 }
 
 FLevelUpStruct::~FLevelUpStruct()
 {
-	
 }

@@ -5,7 +5,6 @@
 
 FAbilityStruct::FAbilityStruct()
 {
-	
 }
 
 FAbilityStruct::~FAbilityStruct()

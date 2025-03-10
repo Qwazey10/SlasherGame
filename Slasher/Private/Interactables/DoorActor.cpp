@@ -8,12 +8,11 @@
 // Sets default values
 ADoorActor::ADoorActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
 	DoorMesh->SetSimulatePhysics(false);
-	
 }
 
 // Called every frame
@@ -35,10 +34,9 @@ void ADoorActor::BeginPlay()
 	InitialDoorRotation = DoorMesh->GetRelativeRotation();
 	FinishedDoorRotation = InitialDoorRotation + FRotator(0.f, 90.f, 0.f); // Rotate 90 degrees on Yaw
 
-	
+
 	if (DoorCurve_Float)
 	{
-		
 		UpdateTimelineCallback.BindUFunction(this, FName("HandleTimelineUpdate"));
 		FinishTimelineCallback.BindUFunction(this, FName("HandleTimelineFinished"));
 
@@ -49,7 +47,10 @@ void ADoorActor::BeginPlay()
 		// Set timeline properties
 		DoorTimeline.SetLooping(false);
 		DoorTimeline.SetPlayRate(1.0f);
-		
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,"DoorActor.cpp -- BeginPlay -- DoorCurve_Float is NULL");
 	}
 }
 
@@ -66,8 +67,6 @@ void ADoorActor::BPAudioEvent_CloseDoor_Implementation()
 }
 
 
-
-
 void ADoorActor::HandleTimelineUpdate(float Value)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Door Update %f"), Value));
@@ -75,7 +74,7 @@ void ADoorActor::HandleTimelineUpdate(float Value)
 	FRotator NewRotation = UKismetMathLibrary::RLerp(InitialDoorRotation, FinishedDoorRotation, Value, true);
 	DoorMesh->SetRelativeRotation(NewRotation);
 	DoorMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	bIsActive= true;
+	bIsActive = true;
 }
 
 void ADoorActor::HandleTimelineFinished()
@@ -129,7 +128,7 @@ void ADoorActor::CloseDoor()
 void ADoorActor::PlayerToInteractable_InputInteractPressed_Implementation()
 {
 	DoorInteractTrigger();
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow,"HELLO FROM DOOR INTERACT");
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, "HELLO FROM DOOR INTERACT");
 }
 
 void ADoorActor::PlayerToInteractable_HighlightTrace_Implementation()
@@ -150,19 +149,15 @@ void ADoorActor::PlayerToInteractable_CustomDepthFilterOff_Implementation()
 	DoorMesh->SetCustomDepthStencilValue(0);
 }
 
-	
-
 
 //Player Damage Function Interface
-void ADoorActor::PlayerToEnemyInterface_Attack_Implementation(float Damage)
+void ADoorActor::PlayerToEnemyInterface_Attack_Implementation(AActor* InstigatingActor, float BaseWeaponDamage, EDamageType PrimaryDamageType,float PrimaryStatusAmt, EDamageType SecondaryDamageType, float SecondaryStatusAmt)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow,"I AM A DOOOOOOOOOOOOOOOR");
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black,"AttackInterface Call Received");
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,FString::FromInt(Damage));
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, "I AM A DOOOOOOOOOOOOOOOR");
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black, "AttackInterface Call Received");
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::FromInt(BaseWeaponDamage));
+	
 }
-
-
-
 
 
 //Old Set Custom Depth Functions
@@ -170,19 +165,19 @@ void ADoorActor::PlayerToEnemyInterface_Attack_Implementation(float Damage)
 
 //void ADoorActor::SetCustomDepthFilter_On()
 //{
-	//UWorld* World=GetWorld();
-	//World->GetTimerManager().SetTimer(CustomDepthFilterOff_TimerHandle,this,  &ADoorActor::SetCustomDepthFilter_Off, 5.0f, false, 0.2f);
-	
-	
-	//DoorMesh->SetRenderCustomDepth(true);
-	//DoorMesh->SetCustomDepthStencilValue(1);
-	
-	
+//UWorld* World=GetWorld();
+//World->GetTimerManager().SetTimer(CustomDepthFilterOff_TimerHandle,this,  &ADoorActor::SetCustomDepthFilter_Off, 5.0f, false, 0.2f);
+
+
+//DoorMesh->SetRenderCustomDepth(true);
+//DoorMesh->SetCustomDepthStencilValue(1);
+
+
 //}
 
 //void ADoorActor::SetCustomDepthFilter_Off()
 //{
-	
-	//DoorMesh->SetRenderCustomDepth(false);
-	//DoorMesh->SetCustomDepthStencilValue(0);
+
+//DoorMesh->SetRenderCustomDepth(false);
+//DoorMesh->SetCustomDepthStencilValue(0);
 //}

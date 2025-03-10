@@ -14,6 +14,3 @@ class ASlasherGameMode : public AGameModeBase
 public:
 	ASlasherGameMode();
 };
-
-
-

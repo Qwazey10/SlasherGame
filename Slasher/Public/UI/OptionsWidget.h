@@ -13,5 +13,4 @@ UCLASS()
 class SLASHER_API UOptionsWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
 };

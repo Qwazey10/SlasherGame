@@ -13,34 +13,35 @@
 // Sets default values
 AItemActor::AItemActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Tags.Add(FName("Item"));
+	
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 	//Set Physics
 	Mesh->SetSimulatePhysics(true); //Enable Simulate Physics
 	Mesh->SetNotifyRigidBodyCollision(true); // Required to fire the hit event
-
+	
 	//Init Buoyancy Component
 	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
-	
-	//Define Pontoon 0
 	Pontoon_00.CenterSocket = FName("None");
 	Pontoon_00.Radius = 20.0f;
 	Pontoon_00.RelativeLocation = FVector(0.0f, 0.0f, 0.0f);
 	BuoyancyComponent->BuoyancyData.Pontoons.Add(Pontoon_00);
 	BuoyancyComponent->BuoyancyData.bApplyDragForcesInWater = true;
-	
+
+	Pontoon_01.CenterSocket = FName("None");
+	Pontoon_01.Radius = 20.0f;
+	Pontoon_01.RelativeLocation = FVector(0.0f, 0.0f, 2.0f);
+	BuoyancyComponent->BuoyancyData.Pontoons.Add(Pontoon_01);
 }
 
 void AItemActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-		// BP Style Construction Script
+	// BP Style Construction Script
 	Constructor_SetupItem((SpawnItemID));
-
-	
 }
 
 
@@ -49,23 +50,8 @@ void AItemActor::BeginPlay()
 {
 	Super::BeginPlay();
 	BeginPlay_SetupItem(SpawnItemID);
-	
+
 	SetMassFromDataTable();
-
-	// Set DataTable Mass For ITem
-	//Gets the Item From the DataTable //Maybe change
-	//FString BeginPlayDebugMessage = Struct.ItemName;
-	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, BeginPlayDebugMessage);
-	
-		//UStaticMesh* LoadMesh = Struct.ItemDisplayMesh;
-		//Mesh->SetStaticMesh(LoadMesh);
-	
-
-	//Struct = ReturnItemStruct(SpawnItemID);
-	//Sets the items from the datatable. 
-	//Mesh->SetStaticMesh(LoadMesh);
-	//Mesh->SetWorldTransform(Struct.ItemDisplayMeshTransform);
-	// Audio Attributes
 	
 
 	
@@ -75,7 +61,6 @@ void AItemActor::BeginPlay()
 void AItemActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AItemActor::Constructor_SetupItem(int SetupItemID)
@@ -90,7 +75,6 @@ void AItemActor::Constructor_SetupItem(int SetupItemID)
 			UE_LOG(LogTemp, Warning, TEXT("Item Data Table Row Found"));
 			FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
 
-			
 
 			if (LookupItemStruct->ItemDisplayMesh != nullptr)
 			{
@@ -100,7 +84,6 @@ void AItemActor::Constructor_SetupItem(int SetupItemID)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Item Display Mesh is not valid"));
 			}
-			
 		}
 		else
 		{
@@ -119,14 +102,13 @@ void AItemActor::BeginPlay_SetupItem(int SetupItemID)
 
 		if (ItemDataTable->GetRowNames().Contains(RowName))
 		{
-			
 			FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
 
 			ItemUseSound = LookupItemStruct->ItemUseSound;
 			ItemPickUpSound = LookupItemStruct->ItemPickUpSound;
 			ItemDestroySound = LookupItemStruct->ItemDestroySound;
 			ItemAttenuation = LookupItemStruct->ItemAttenuation;
-	
+
 			//Setup Item Attributes
 			ItemID = LookupItemStruct->ItemID;
 			ItemName = LookupItemStruct->ItemName;
@@ -147,10 +129,10 @@ void AItemActor::BeginPlay_SetupItem(int SetupItemID)
 			Resist_Cold = LookupItemStruct->Resist_Cold;
 			Resist_Detrimental = LookupItemStruct->Resist_Detrimental;
 			Resist_Divine = LookupItemStruct->Resist_Divine;
-	
+
 			// OnUse Ability Descriptions 
 			OnUse_ActivateAbilityID = LookupItemStruct->OnUse_ActivateAbilityID;
-			Power =	LookupItemStruct->Power;
+			Power = LookupItemStruct->Power;
 			Description_00 = LookupItemStruct->Description_00;
 			AbilityMod_00 = LookupItemStruct->AbilityMod_00;
 			Description_01 = LookupItemStruct->Description_01;
@@ -173,28 +155,27 @@ void AItemActor::BeginPlay_SetupItem(int SetupItemID)
 			{
 				if (GEngine)
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, FString::Printf(TEXT(" ItemActor.cpp -- BeginPlay_Setup() -- PhysicsInteractionAudioDataAsset is Null")));
+					GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red,
+					                                 FString::Printf(TEXT(
+						                                 " ItemActor.cpp -- BeginPlay_Setup() -- PhysicsInteractionAudioDataAsset is Null")));
 				}
 			}
-
-			
 		}
 		else
 		{
-			
-			FString BeginPlayDebugMessage = FString::Printf(TEXT(" ItemActor.cpp -- BeginPlay_Setup() -- Item Data Table Not Found! Invalid ItemID"));
+			FString BeginPlayDebugMessage = FString::Printf(
+				TEXT(" ItemActor.cpp -- BeginPlay_Setup() -- Item Data Table Not Found! Invalid ItemID"));
 			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, BeginPlayDebugMessage);
-			
 		}
 	}
 }
-
 
 
 //BPI_PlayerToInteractable
 void AItemActor::PlayerToInteractable_InputInteractPressed_Implementation()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Black, "Item Actor Player Interact Press Received");
+	AddSelfToInventory();
 }
 
 void AItemActor::PlayerToInteractable_HighlightTrace_Implementation()
@@ -235,11 +216,11 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
                            FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
-	
+
 	float NormalImpulseLength = NormalImpulse.Size();
 	PhysicsImpactLocation = HitLocation;
 
-	
+
 	if (PhysicsInteractionAudioDataAsset)
 	{
 		if (NormalImpulseLength > 1000.0f)
@@ -248,69 +229,79 @@ void AItemActor::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiv
 			{
 				EPhysicalSurface PhysSurf = Hit.PhysMaterial->SurfaceType;
 				FRotator Rotation = GetActorRotation();
-				
-				float NormalizedForce = UKismetMathLibrary::NormalizeToRange (NormalImpulseLength, 0.0f, 50000.0f);
+
+				float NormalizedForce = UKismetMathLibrary::NormalizeToRange(NormalImpulseLength, 0.0f, 50000.0f);
 				if (NormalizedForce >= 0.1f && NormalizedForce <= 1.0f)
 				{
 					BPAudio_ItemActorPhysicsImpact_Light();
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Green, 10.0f, false);
-						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Yellow, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Yellow,
+						                                 FString::Printf(
+							                                 TEXT("Normalized Force: %f"), NormalizedForce));
 					}
-					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 1), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
+					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 1),
+					                                      GetActorLocation(), Rotation, NormalizedForce, 1, 0,
+					                                      PhysicsInteractionAudioDataAsset->
+					                                      PhysicsImpact_SoundAttenuation_Heavy);
 				}
-				
+
 				else if (NormalizedForce > 1.0f && NormalizedForce <= 2.0f)
 				{
-				
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Orange, 10.0f, false);
-						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Orange, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Orange,
+						                                 FString::Printf(
+							                                 TEXT("Normalized Force: %f"), NormalizedForce));
 					}
 					BPAudio_ItemActorPhysicsImpact_Medium();
-					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 2), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
-					
-				
+					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 2),
+					                                      GetActorLocation(), Rotation, NormalizedForce, 1, 0,
+					                                      PhysicsInteractionAudioDataAsset->
+					                                      PhysicsImpact_SoundAttenuation_Heavy);
 				}
-				
+
 				else if (NormalizedForce > 2.0f)
 				{
 					if (bShowPhysicsImpactAudioDebugSpheres)
 					{
 						ItemActor_DrawDebugSphere(HitLocation, 25.0f, FColor::Orange, 10.0f, false);
-						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Normalized Force: %f"), NormalizedForce));
+						GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
+						                                 FString::Printf(
+							                                 TEXT("Normalized Force: %f"), NormalizedForce));
 					}
-					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 3), GetActorLocation(), Rotation, NormalizedForce, 1, 0,PhysicsInteractionAudioDataAsset->PhysicsImpact_SoundAttenuation_Heavy);
+					UGameplayStatics::PlaySoundAtLocation(this, SwitchAudioOnPhysMaterial(PhysSurf, 3),
+					                                      GetActorLocation(), Rotation, NormalizedForce, 1, 0,
+					                                      PhysicsInteractionAudioDataAsset->
+					                                      PhysicsImpact_SoundAttenuation_Heavy);
 					BPAudio_ItemActorPhysicsImpact_Heavy();
-					
 				}
-				
+
 				StartPhysicsHitTimer();
 				bCanAudioPhysicsTriggerHit = false;
 			}
-
 		}
 	}
-	
+
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, FString::Printf(TEXT("ItemActor.cpp -- PhysicsImpactAudioDataAsset is Null -- The link needs to be made in DT_PrimaryItem")));
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+		                                 FString::Printf(TEXT(
+			                                 "ItemActor.cpp -- PhysicsImpactAudioDataAsset is Null -- The link needs to be made in DT_PrimaryItem")));
 	}
 }
 
 //This is the timer manager called from physics interaction hit event, this timer will block multiple hit events from triggering
 void AItemActor::StartPhysicsHitTimer()
 {
-	
 	GetWorld()->GetTimerManager().SetTimer(
-	 HitTimerHandle,
-	 this,
-	 &AItemActor::ResetHitTimer,
-	 0.5f,
-	 false);
-	
+		HitTimerHandle,
+		this,
+		&AItemActor::ResetHitTimer,
+		0.5f,
+		false);
 }
 
 void AItemActor::ResetHitTimer()
@@ -321,11 +312,26 @@ void AItemActor::ResetHitTimer()
 
 void AItemActor::AddSelfToInventory()
 {
-	
 	USlasherGameInstance* GameInstance = Cast<USlasherGameInstance>(GetWorld()->GetGameInstance());
-	GameInstance->Inventory.Add(ItemID);
-	BPAudio_ItemPickupAudio();
-	Destroy();
+	bool bSlotFound = false;
+	
+	for (int32 i = 0; i < GameInstance->Inventory.Num(); ++i)
+	{
+		if (GameInstance->Inventory[i] == 0) // Check for an empty slot (0 indicates empty)
+		{
+			GameInstance->Inventory[i] = ItemID; // Add self to the empty slot
+			BPAudio_ItemPickupAudio();
+			Destroy();
+			bSlotFound = true;
+			return; // Exit the function once added
+		}
+		
+	}
+	if (bSlotFound == false)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("Inventory is full! Cannot add item."));
+	}
+	// If no empty slot is found
 	
 }
 
@@ -339,20 +345,21 @@ void AItemActor::BPAudio_ItemActorPhysicsImpact_Light_Implementation()
 {
 	//Audio BP Call for when an Item Impacts objects. 
 }
+
 void AItemActor::BPAudio_ItemActorPhysicsImpact_Medium_Implementation()
 {
 	//Audio BP Call for when an Item Impacts objects. 
 }
+
 void AItemActor::BPAudio_ItemActorPhysicsImpact_Heavy_Implementation()
 {
 	//Audio BP Call for when an Item Impacts objects. 
 }
 
 void AItemActor::ItemActor_DrawDebugSphere(FVector Location, float Radius, FColor Color, float Duration,
-	bool bPersistentLines)
+                                           bool bPersistentLines)
 {
-
-	const UWorld *World = GetWorld();
+	const UWorld* World = GetWorld();
 	if (!World)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Draw Debug Sphere -- Draw.cpp -- World Is Null"));
@@ -370,20 +377,19 @@ void AItemActor::ItemActor_DrawDebugSphere(FVector Location, float Radius, FColo
 	// - Thickness: Line thickness of the sphere.
 
 	DrawDebugSphere(
-		World,            // World context
-		Location,         // Sphere location
-		Radius,           // Sphere radius
-		12,               // Number of segments
-		Color,            // Sphere color
+		World, // World context
+		Location, // Sphere location
+		Radius, // Sphere radius
+		12, // Number of segments
+		Color, // Sphere color
 		bPersistentLines, // Persistent lines
-		Duration,         // Duration in seconds
-		0,                // Depth priority (0 = foreground)
-		1.0f              // Line thickness
+		Duration, // Duration in seconds
+		0, // Depth priority (0 = foreground)
+		1.0f // Line thickness
 	);
-	
 }
 
- //Impact Classification int is the representation of 1-3 to Light, Medium, Heavy - From NotifyHit Function. 
+//Impact Classification int is the representation of 1-3 to Light, Medium, Heavy - From NotifyHit Function. 
 USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMaterial, int ImpactClassificationInt)
 {
 	switch (PhysicalMaterial)
@@ -391,41 +397,39 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 	default:
 		{
 			return PhysicsInteractionAudioDataAsset->PhysicsImpact_Default_Light_00;
-		
 		}
-		
-		
+
+
 	case SurfaceType_Default:
 		{
 			if (ImpactClassificationInt == 1)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Default_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Default_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Default_Heavy_00;
 			}
-			
 		}
-		
+
 	case SurfaceType1: // Wood
 		{
 			if (ImpactClassificationInt == 1)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Wood_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Wood_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Wood_Heavy_00;
@@ -437,12 +441,12 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Stone_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Stone_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Stone_Heavy_00;
@@ -456,7 +460,7 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Metal_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Metal_Medium_00;
@@ -464,7 +468,7 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Metal_Heavy_00;
-			}			
+			}
 		}
 
 	case SurfaceType4: // Water
@@ -473,73 +477,70 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Water_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Water_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Water_Heavy_00;
-			}			
+			}
 		}
-	
+
 	case SurfaceType5: // Glass
 		{
 			if (ImpactClassificationInt == 1)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Glass_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Glass_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Glass_Heavy_00;
 			}
-			
 		}
-		
+
 	case SurfaceType6: // Grass
 		{
 			if (ImpactClassificationInt == 1)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Grass_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Grass_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Grass_Heavy_00;
 			}
-			
 		}
-	
+
 	case SurfaceType7: // Slime
 		{
 			if (ImpactClassificationInt == 1)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Slime_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Slime_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Slime_Heavy_00;
 			}
-			
 		}
 	case SurfaceType8: //Lava
 		{
@@ -547,17 +548,16 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Lava_Light_00;
 			}
-				
+
 			if (ImpactClassificationInt == 2)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Lava_Medium_00;
 			}
-			
+
 			if (ImpactClassificationInt == 3)
 			{
 				return PhysicsInteractionAudioDataAsset->PhysicsImpact_Lava_Heavy_00;
 			}
-			
 		}
 	}
 	return PhysicsInteractionAudioDataAsset->PhysicsImpact_Default_Light_00;
@@ -580,7 +580,6 @@ USoundCue* AItemActor::SwitchAudioOnPhysMaterial(EPhysicalSurface PhysicalMateri
 
 void AItemActor::SetMassFromDataTable()
 {
-	
 	if (ItemDataTable != nullptr)
 	{
 		FString ItemIDToString = FString::FromInt(SpawnItemID);
@@ -590,7 +589,7 @@ void AItemActor::SetMassFromDataTable()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Item Data Table Row Found"));
 			FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
-			Mesh->SetMassOverrideInKg("None",LookupItemStruct->ItemPhysicsMass);
+			Mesh->SetMassOverrideInKg("None", LookupItemStruct->ItemPhysicsMass);
 		}
-	}	
+	}
 }

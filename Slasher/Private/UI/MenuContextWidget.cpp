@@ -21,23 +21,18 @@ void UMenuContextWidget::HandleNativeVisibilityChanged(ESlateVisibility InVisibi
 //OnMouseEnter -- OnMouse Leave
 void UMenuContextWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
-	
 }
 
 void UMenuContextWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
-	
 	Super::NativeOnMouseLeave(InMouseEvent);
-	
 }
-
 
 
 //OnMouseButton DOWN
 FReply UMenuContextWidget::NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry,
-	const FPointerEvent& InMouseEvent)
+                                                          const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnPreviewMouseButtonDown(InGeometry, InMouseEvent);
 	return FReply::Unhandled();
@@ -50,12 +45,9 @@ FReply UMenuContextWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 }
 
 
-
 //Drag Detected 
 void UMenuContextWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-	UDragDropOperation*& OutOperation)
+                                              UDragDropOperation*& OutOperation)
 {
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 }
-
-

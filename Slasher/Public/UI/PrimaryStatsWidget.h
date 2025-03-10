@@ -67,11 +67,11 @@ class SLASHER_API UPrimaryStatsWidget : public UUserWidget
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Display_Intelligence;
 
-	
+
 	//Defenses
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ArmorTextBlock;
-	UPROPERTY(meta = (BindWidget)) 
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ResistFireTextBlock;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ResistColdTextBlock;
@@ -92,7 +92,6 @@ class SLASHER_API UPrimaryStatsWidget : public UUserWidget
 	UTextBlock* Display_ResistDivineTextBlock;
 
 
-
 	//Experience Display
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ExperienceTextBlock;
@@ -104,7 +103,7 @@ class SLASHER_API UPrimaryStatsWidget : public UUserWidget
 	UTextBlock* LevelTextBlock;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Display_LevelTextBlock;
-	
+
 	//Status Display
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* StatusTextBlock;
@@ -122,17 +121,20 @@ class SLASHER_API UPrimaryStatsWidget : public UUserWidget
 	UPROPERTY(meta = (BindWidget))
 	UImage* ForegroundImage;
 
-	virtual FReply NativeOnPreviewMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
-	virtual FReply NativeOnMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
+	virtual FReply
+	NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	virtual void NativeConstruct() override;
-	
+
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	                                  UDragDropOperation*& OutOperation) override;
 
 	void HandleNativeVisibilityChanged(ESlateVisibility InVisibility);
+
 public:
 	void PrimaryStatsWidget_UpdateAll();
 };

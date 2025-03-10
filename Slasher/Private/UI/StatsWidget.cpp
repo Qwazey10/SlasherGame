@@ -20,7 +20,6 @@ void UStatsWidget::NativeConstruct()
 	LevelTextBlock->SetText(FText::FromString("LEVEL"));
 	StatusTextBlock->SetText(FText::FromString("STATUS"));
 	GoldTextBlock->SetText(FText::FromString("GOLD"));
-
 }
 
 FReply UStatsWidget::NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -48,7 +47,7 @@ void UStatsWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 }
 
 void UStatsWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-	UDragDropOperation*& OutOperation)
+                                        UDragDropOperation*& OutOperation)
 {
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 }
@@ -74,21 +73,22 @@ void UStatsWidget::StatsWidget_UpdateAll()
 		//Set Experience
 		FString DisplayExp = FString::SanitizeFloat(SlasherGI->GI_CurrentExperience, 0);
 		ExperienceDisplayTextBlock->SetText(FText::FromString(DisplayExp));
-		
+
 		//Set Level
 		FString DisplayLevel = FString::FromInt(SlasherGI->GI_CurrentLevel);
 		LevelDisplayTextBlock->SetText(FText::FromString(DisplayLevel));
-		
+
 		//SetStatus
 		//Not implemented
-		
-		
+
+
 		//SetGold
 		FString DisplayGold = FString::FromInt(SlasherGI->Gold);
 		GoldDisplayTextBlock->SetText(FText::FromString(DisplayGold));
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(0, 20.f, FColor::Red, "StatsWidget.cpp - Player Character is NOT VALID from Stats Window Update");
+		GEngine->AddOnScreenDebugMessage(0, 20.f, FColor::Red,
+		                                 "StatsWidget.cpp - Player Character is NOT VALID from Stats Window Update");
 	}
 }

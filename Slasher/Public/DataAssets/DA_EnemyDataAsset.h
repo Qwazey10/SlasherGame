@@ -13,8 +13,4 @@ UCLASS()
 class SLASHER_API UDA_EnemyDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
-	
-	
-	
-	
 };

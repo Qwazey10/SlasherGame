@@ -9,7 +9,8 @@ ASlasherGameMode::ASlasherGameMode()
 	: Super()
 {
 	// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/SlasherCharacter/BP_SlasherCharacter"));
+	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(
+		TEXT("/Game/SlasherCharacter/BP_SlasherCharacter"));
 	DefaultPawnClass = PlayerPawnClassFinder.Class;
 
 	// use our custom HUD class

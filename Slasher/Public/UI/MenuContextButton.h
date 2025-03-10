@@ -17,33 +17,34 @@ UCLASS()
 class SLASHER_API UMenuContextButton : public UUserWidget
 {
 	GENERATED_BODY()
+
 protected:
-	
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MenuDisplayText;
-	
+
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* BackGroundTexture;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* ForeGroundTexture;
-	
-	
-	virtual FReply NativeOnPreviewMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
-	virtual FReply NativeOnMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
+
+
+	virtual FReply
+	NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	virtual void NativeConstruct() override;
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	                                  UDragDropOperation*& OutOperation) override;
 
-	public:
+public:
 	//Enum to Determine Display Text, Display text set in .cpp file.
-	UPROPERTY(BlueprintReadWrite,EditAnywhere, Category = "MenuContext")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MenuContext")
 	EInventoryContext PrimaryMenuButton_InventoryMenuContext;
 
-	UPROPERTY(BlueprintReadWrite,EditAnywhere, Category = "MenuContext")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MenuContext")
 	UInventoryUIDataAsset* UIDataAsset;
-	
 };

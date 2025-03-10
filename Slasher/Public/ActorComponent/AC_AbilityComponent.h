@@ -12,14 +12,13 @@ class ASlasherCharacter;
 #include "AC_AbilityComponent.generated.h"
 
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SLASHER_API UAC_AbilityComponent : public UActorComponent
 
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UAC_AbilityComponent();
 	//Owner Reference
@@ -27,22 +26,20 @@ public:
 	//if component is attached to Character, this will be Reference. 
 
 
-	
-	
-	
 	//UtilityLineTraceFunction 
-	FHitResult Utility_LineTrace(FVector StartLoc, FVector EndLoc, EDrawDebugTrace::Type TraceType,float TraceDistance, float DrawTime) const;
-	
+	FHitResult Utility_LineTrace(FVector StartLoc, FVector EndLoc, EDrawDebugTrace::Type TraceType, float TraceDistance,
+	                             float DrawTime) const;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-
-public:	
+public:
 	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-	
+
 	void ExecuteAbilityID(
 		int AbilityID,
 		EAbilityType InputAbilityType,

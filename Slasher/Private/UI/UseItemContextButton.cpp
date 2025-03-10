@@ -18,19 +18,18 @@ void UUseItemContextButton::NativeConstruct()
 
 void UUseItemContextButton::HandleNativeVisibilityChanged(ESlateVisibility InVisibility)
 {
-
-if (InVisibility == ESlateVisibility::Hidden)
-{
-	this->RemoveFromParent();
-	GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Magenta, "UseItemContextButton.cpp::HandleNativeVisibilityChanged -- Hidden");
-	
-}
+	if (InVisibility == ESlateVisibility::Hidden)
+	{
+		this->RemoveFromParent();
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Magenta,
+		                                 "UseItemContextButton.cpp::HandleNativeVisibilityChanged -- Hidden");
+	}
 }
 
 
 //MouseButton Down
 FReply UUseItemContextButton::NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry,
-	const FPointerEvent& InMouseEvent)
+                                                             const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnPreviewMouseButtonDown(InGeometry, InMouseEvent);
 
@@ -40,24 +39,21 @@ FReply UUseItemContextButton::NativeOnPreviewMouseButtonDown(const FGeometry& In
 FReply UUseItemContextButton::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
-	
+
 	USlasherGameInstance* SlasherGI = Cast<USlasherGameInstance>(GetGameInstance());
-	
+
 	if (SlasherGI)
 	{
-		
 		SetSelected_On();
 		SetItemRotationMesh();
 		if (SlasherGI->UseItemContextWidget != this)
 		{
-		
 			UUseItemContextButton* PrevSelectedButton = Cast<UUseItemContextButton>(SlasherGI->UseItemContextWidget);
 			if (PrevSelectedButton)
 			{
 				PrevSelectedButton->SetSelected_Off();
 			}
 			SlasherGI->UseItemContextWidget = this;
-			
 		}
 		else
 		{
@@ -66,9 +62,10 @@ FReply UUseItemContextButton::NativeOnMouseButtonDown(const FGeometry& InGeometr
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "UseItemContextButton.cpp::NativeOnMouseButtonDown -- SlasherGI is NULL");
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+		                                 "UseItemContextButton.cpp::NativeOnMouseButtonDown -- SlasherGI is NULL");
 	}
-	
+
 	return FReply::Handled();
 }
 
@@ -101,7 +98,8 @@ void UUseItemContextButton::SetItemRotationMesh()
 		FName RowName = FName(*FString::FromInt(ItemID));
 		if (SlasherGI->ItemDataTable->GetRowNames().Contains(RowName))
 		{
-			FItemStruct* ItemStruct = SlasherGI->ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Get Row if Inventory Has Item"));
+			FItemStruct* ItemStruct = SlasherGI->ItemDataTable->FindRow<FItemStruct>(
+				RowName, TEXT("Get Row if Inventory Has Item"));
 			if (ItemStruct->ItemDisplayMesh != nullptr)
 			{
 				PlayerChar->RotatingMenuItemStaticMesh->SetVisibility(true);
@@ -109,24 +107,26 @@ void UUseItemContextButton::SetItemRotationMesh()
 			}
 			else
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "UseItemContextButton.cpp::SetItemRotationMesh -- ItemDisplayMesh is NULL");
+				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+				                                 "UseItemContextButton.cpp::SetItemRotationMesh -- ItemDisplayMesh is NULL");
 			}
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "UseItemContextButton.cpp::SetItemRotationMesh -- ItemID Does not Have a Viable RowName");
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+			                                 "UseItemContextButton.cpp::SetItemRotationMesh -- ItemID Does not Have a Viable RowName");
 		}
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red, "UseItemContextButton.cpp::SetItemRotationMesh -- PlayerChar is NULL");
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+		                                 "UseItemContextButton.cpp::SetItemRotationMesh -- PlayerChar is NULL");
 	}
 }
 
 //Mouse Leave and Enter
 void UUseItemContextButton::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 	if (UIDataAsset)
 	{
@@ -149,9 +149,7 @@ void UUseItemContextButton::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 
 //Drag Detected
 void UUseItemContextButton::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-	UDragDropOperation*& OutOperation)
+                                                 UDragDropOperation*& OutOperation)
 {
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 }
-
-

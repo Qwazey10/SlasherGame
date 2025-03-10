@@ -14,8 +14,6 @@ class SLASHER_API UAnimNotify_FootStepRight : public UAnimNotify
 {
 	GENERATED_BODY()
 
-	public:
-	
+public:
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
-	
 };

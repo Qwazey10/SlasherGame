@@ -17,6 +17,9 @@
 #include "ActorComponent/AC_PrimaryContextMenuManager.h"
 
 // Included Data
+#include "ActorComponent/EquipmentComponent.h"
+#include "ActorComponent/SaveLoadComponent.h"
+#include "Actors/WeaponActor.h"
 #include "DataAssets/PlayerDataAsset.h"
 
 //Generated .h
@@ -32,26 +35,22 @@ class USoundBase;
 class UAC_AbilityComponent;
 
 
-
 UCLASS(config=Game)
-class ASlasherCharacter : public ACharacter , public IBPI_PlayerToEnemy, public IBPI_PlayerToInteractable
+class ASlasherCharacter : public ACharacter, public IBPI_PlayerToEnemy, public IBPI_PlayerToInteractable
 {
 	GENERATED_BODY()
-	
-	
+
+
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
 	//UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	//USkeletalMeshComponent* Mesh1P;
-	
+
 
 	/** Location on gun mesh where projectiles should spawn. */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	USceneComponent* FP_MuzzleLocation;
-	
 
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
+
 
 
 public:
@@ -63,9 +62,13 @@ protected:
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance" )
+	/** First person camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FirstPersonCameraComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance")
 	UStaticMeshComponent* PrimaryItemMesh;
-	
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -75,7 +78,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Data Asset Reference")
 	UPlayerDataAsset* PlayerDataAsset;
 
-	
+
 	//Component Declarations
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UAC_ImGuiActorDebug* DebugActorComponent;
@@ -83,12 +86,14 @@ public:
 	UAC_AbilityComponent* AbilityComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UAC_PrimaryContextMenuManager* PrimaryContextMenuManager;
-	
+	UPROPERTY(EditAnywhere, BlueprintreadWrite)
+	UEquipmentComponent* EquipmentComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USaveLoadComponent* SaveLoadComponent;
+
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-	
-	
 
 
 	//****************** Slasher Character Attributes ********************
@@ -101,7 +106,7 @@ public:
 	float CurrentExperience;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float ExperienceToNextLevel;
-	
+
 	//HP MP
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float CurrentHealth;
@@ -124,7 +129,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float Base_Guard = 0.0f;
 
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float Base_HP_Regeneration = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
@@ -145,7 +150,7 @@ public:
 	float Total_MP_Regeneration = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float Total_Guard_Regeneration = 0.0f;
-	
+
 	//Damage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float Base_Damage = 0.0f;
@@ -229,7 +234,7 @@ public:
 	float Total_Resist_Detrimental = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	float Total_Resist_Divine = 0.0f;
-	
+
 	//Combat Bools
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RunTime Attributes")
 	bool bCanCast = true;
@@ -241,7 +246,6 @@ public:
 	bool bCanBlock = true;
 
 
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "InteractTraceHitActorRef")
 	AActor* InteractHitActor;
 
@@ -250,7 +254,7 @@ public:
 	IBPI_PlayerToEnemy* PlayerToEnemyInterface;
 
 	IBPI_PlayerToInteractable* PlayerToInteractableInterface;
-	
+
 	//**Debug Codes
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug Booleans")
 	bool bShowPlayerDebugMenu = false;
@@ -268,32 +272,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DataTables")
 	UDataTable* AbilityDataTable;
 
-	//Audio BP implement Functions
-	UFUNCTION(BlueprintNativeEvent)
-	void BPAudioEvent_LevelUpAudio();
-	UFUNCTION(BlueprintNativeEvent)
-	void BPAudioEvent_HitAudio();
-	UFUNCTION(BlueprintNativeEvent)
-	void BPAudioEvent_JumpAudio();
-	UFUNCTION(BlueprintNativeEvent)
-	void BPAudioEvent_FallAudio();
-	UFUNCTION(BlueprintNativeEvent) 
-	void BPAudioEvent_BurningAudio();
-	UFUNCTION(BlueprintNativeEvent)
-	
-	void BPAudioEvent_AttackAudio();
-	UFUNCTION(BlueprintNativeEvent) 
-	void BPAudioEvent_BlockAudio();
 
-	UFUNCTION(BlueprintNativeEvent) 
-	void BPAudioEvent_RightFootStepAudio();
-	UFUNCTION(BlueprintNativeEvent) 
-	void BPAudioEvent_LeftFootStepAudio();
-
-	
 protected:
-	
-
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
 
@@ -313,18 +293,18 @@ protected:
 	void LookUpAtRate(float Rate);
 
 	//Slasher Character Inputs
-	
+
 	//Directionals
 	void OnPress_W();
 	void OnPress_A();
 	void OnPress_S();
 	void OnPress_D();
-	
+
 	void OnRelease_W();
 	void OnRelease_A();
 	void OnRelease_S();
 	void OnRelease_D();
-	
+
 	//Action Inputs
 	void OnPress_Q();
 	void OnPress_E();
@@ -352,20 +332,18 @@ protected:
 	void BeginPlay_CreateInventoryWidgets();
 
 
-
 	//General Functions
-	
+
 	void SlasherCharacter_TakeDamage(float DamageTaken);
 	void DeathOfCharacter();
-	
-	
-	
+
+
 	//Player To Interactable Interface Functions 
 	void InteractTrace();
 	void InteractHighlightTrace();
 
 	//Player ToEnemy Interface Functions
-	void PlayerToEnemy_AttackSuccessful(float HitDamage);
+	void PlayerToEnemy_AttackTrace(EDamageType DamageType, float WeaponDamage);
 
 	//Debug Functions
 	void DebugItemTrace();
@@ -374,12 +352,6 @@ protected:
 	void ToggleInventoryWidget();
 
 
-
-
-
-
-	
-protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
@@ -398,6 +370,8 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 	void BeginPlay_SetLevel();
+	void BeginPlay_SetEquipmentFromGIEquipment(); //Function that Loops Saved Equipment.
+	void BeginPlay_RegisterEquipment();
 
 	//Debug Functions
 	void testFunc_SetBaseVars();
@@ -407,7 +381,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug Booleans")
 	bool ShowCharacterDebugMessages = false;
-	
+
 	void DebugCharacterPrintString(const FColor StringColor, const FString& String) const;
 	void DebugCharacterPrintString_Error(const FString& String) const; //Generate 
 
@@ -417,8 +391,6 @@ public:
 
 	//Equipment Functions
 	void EquipItemID(int EquippedItemID); //Debug Function For Now - 
-	void EquipItem_Secondary(int SecondaryItemIDToEquip); // Visual SetMesh
-	void EquipItem_Primary(int PrimaryItemIDToEquip); // Visual SetMesh
 
 
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
@@ -449,7 +421,7 @@ public:
 
 	void StartSprint();
 	void EndSprint();
-	
+
 	UPROPERTY()
 	UTimelineComponent* CrouchTimeline;
 
@@ -460,19 +432,18 @@ public:
 	//Combat Functions
 	void OnAttack();
 	bool bIsAttacking = false;
-	
+	void AnimNotify_AttackWindowStart();
+
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	
-	
-/*
- *  Rotating Mesh Menu System Vars
- */
-	
+
+	/*
+	 *  Rotating Mesh Menu System Vars
+	 */
+
 	void RotatingMenuItem_SetBaseRotation(float Rotation);
-	
+
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 	UStaticMeshComponent* RotatingMenuItemStaticMesh;
 };
-

@@ -14,8 +14,8 @@ UCLASS()
 class SLASHER_API UPhysicsInteractionAudioDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
-public:
 
+public:
 	//Default Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType0 -- Impact Audio - Default")
 	USoundCue* PhysicsImpact_Default_Light_00;
@@ -27,11 +27,8 @@ public:
 	//Default Impact Audio - Heavy 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType0 -- Impact Audio - Default")
 	USoundCue* PhysicsImpact_Default_Heavy_00;
-	
 
 
-
-	
 	//Wood Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType1 -- Impact Audio - Wood")
 	USoundCue* PhysicsImpact_Wood_Light_00;
@@ -45,55 +42,45 @@ public:
 	USoundCue* PhysicsImpact_Wood_Heavy_00;
 
 
-
-	
 	//Stone Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType2 -- Impact Audio - Stone")
 	USoundCue* PhysicsImpact_Stone_Light_00;
-	
+
 	// Stone Impact Audio -- Medium
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType2 -- Impact Audio - Stone")
 	USoundCue* PhysicsImpact_Stone_Medium_00;
-	
+
 	//Stone Impact Audio -- Heavy
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType2 -- Impact Audio - Stone")
 	USoundCue* PhysicsImpact_Stone_Heavy_00;
 
 
-
-	
 	//Metal Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType3 -- Impact Audio - Metal")
 	USoundCue* PhysicsImpact_Metal_Light_00;
-	
+
 	//Metal Impact Audio -- Medium
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType3 -- Impact Audio - Metal")
 	USoundCue* PhysicsImpact_Metal_Medium_00;
-	
+
 	//Metal Impact Audio -- Heavy
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType3 -- Impact Audio - Metal")
 	USoundCue* PhysicsImpact_Metal_Heavy_00;
-	
 
 
-	
-	
 	//Water Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType4 -- Impact Audio - Water")
 	USoundCue* PhysicsImpact_Water_Light_00;
-	
+
 	//Water Impact Audio -- Medium
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType4 -- Impact Audio - Water")
 	USoundCue* PhysicsImpact_Water_Medium_00;
-	
+
 	//Water Impact Audio -- Heavy
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType4 -- Impact Audio - Water")
 	USoundCue* PhysicsImpact_Water_Heavy_00;
-	
 
 
-
-	
 	//Glass Impact Audio - Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType5 -- Impact Audio - Glass")
 	USoundCue* PhysicsImpact_Glass_Light_00;
@@ -107,7 +94,6 @@ public:
 	USoundCue* PhysicsImpact_Glass_Heavy_00;
 
 
-	
 	//Grass Impact Audio - Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType6 -- Impact Audio - Glass")
 	USoundCue* PhysicsImpact_Grass_Light_00;
@@ -121,8 +107,6 @@ public:
 	USoundCue* PhysicsImpact_Grass_Heavy_00;
 
 
-
-	
 	//Slime Impact Audio - Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType7 -- Impact Audio - Slime")
 	USoundCue* PhysicsImpact_Slime_Light_00;
@@ -135,8 +119,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType7 -- Impact Audio  - Slime")
 	USoundCue* PhysicsImpact_Slime_Heavy_00;
 
-
-	
 
 	//Lava Impact Audio - Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType8 -- Impact Audio - Lava")
@@ -151,9 +133,6 @@ public:
 	USoundCue* PhysicsImpact_Lava_Heavy_00;
 
 
-	
-	
-	
 	//Audio Attenuation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio - Attenuation")
 	USoundAttenuation* PhysicsImpact_SoundAttenuation_Light;
@@ -165,6 +144,4 @@ public:
 	//Audio Attenuation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio - Attenuation")
 	USoundAttenuation* PhysicsImpact_SoundAttenuation_Heavy;
-	
-	
 };

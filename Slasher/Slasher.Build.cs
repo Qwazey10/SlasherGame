@@ -8,7 +8,8 @@ public class Slasher : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { 
+		PublicDependencyModuleNames.AddRange(new[]
+		{
 			"Core",
 			"CoreUObject",
 			"Engine",

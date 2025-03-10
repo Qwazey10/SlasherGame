@@ -6,11 +6,10 @@
 
 FItemStruct::FItemStruct()
 {
-	
 }
 
 FItemStruct::~FItemStruct()
 {
-	ItemName= "Null";
+	ItemName = "Null";
 	ItemDisplayMesh = nullptr;
 }

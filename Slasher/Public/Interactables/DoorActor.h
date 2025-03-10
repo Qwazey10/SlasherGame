@@ -14,7 +14,7 @@ class SLASHER_API ADoorActor : public AActor, public IBPI_PlayerToInteractable, 
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this actor's properties
 	ADoorActor();
 
@@ -23,13 +23,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCurveFloat* DoorCurve_Float;
-	
+
 	FTimeline DoorTimeline; // Timeline Definition 
 
 	FOnTimelineFloat UpdateTimelineCallback;
 	FOnTimelineEvent FinishTimelineCallback;
 
-	
+
 	FRotator InitialDoorRotation;
 	FRotator FinishedDoorRotation;
 
@@ -56,24 +56,22 @@ public:
 
 private:
 	FTimerHandle CustomDepthFilterOff_TimerHandle;
-	
+
 	//UFUNCTION()
 	//void SetCustomDepthFilter_On();
 	//UFUNCTION()
 	//void SetCustomDepthFilter_Off();
 
 
-
-	
-	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	virtual void PlayerToEnemyInterface_Attack_Implementation(float Damage) override;
+	
+	virtual void PlayerToEnemyInterface_Attack_Implementation(AActor* InstigatingActor, float BaseWeaponDamage, EDamageType PrimaryDamageType,float PrimaryStatusAmt, EDamageType SecondaryDamageType, float SecondaryStatusAmt) override;
 
 	virtual void PlayerToInteractable_InputInteractPressed_Implementation() override;
 	virtual void PlayerToInteractable_HighlightTrace_Implementation() override;
@@ -81,5 +79,4 @@ public:
 	virtual void PlayerToInteractable_CustomDepthFilterOff_Implementation() override;
 
 	//
-	
 };

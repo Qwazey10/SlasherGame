@@ -7,7 +7,7 @@
 void UAnimNotify_FootStepRight::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	AActor* Owner = MeshComp->GetOwner();
-	
+
 	if (MeshComp && MeshComp->GetOwner())
 	{
 		if (Owner->ActorHasTag(FName("Player")))

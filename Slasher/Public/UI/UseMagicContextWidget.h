@@ -13,5 +13,4 @@ UCLASS()
 class SLASHER_API UUseMagicContextWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
 };

@@ -6,10 +6,8 @@
 
 FEnemyStruct::FEnemyStruct()
 {
-	
 }
 
 FEnemyStruct::~FEnemyStruct()
 {
-	
 }

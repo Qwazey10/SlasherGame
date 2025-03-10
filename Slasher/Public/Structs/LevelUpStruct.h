@@ -11,18 +11,16 @@
  *					CHARACTER LEVEL UP STUCT, Used To Plot Gains on Level Up
  */
 USTRUCT(BlueprintType)
-struct SLASHER_API FLevelUpStruct: public FTableRowBase
+struct SLASHER_API FLevelUpStruct : public FTableRowBase
 {
-public:
-	
 	GENERATED_BODY()
 
-	
+
 	//Experience To Next Level
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Experience")
 	float ExperienceToNextLevel = 0;
 
-	
+
 	//Base Attributes At X Level
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes At X Level")
 	float BaseHealthAtLevel = 0;
@@ -37,14 +35,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes At X Level")
 	float BaseIntelligenceAtLevel = 0;
 
-	
+
 	//Offenses 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Offenses At X Level")
 	float BaseAttackSpeedAtLevel = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Offenses At X Level")
 	float BaseMagicDmgModAtLevel = 0;
 
-	
+
 	//Defenses 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defenses At X Level")
 	float BaseArmorAtLevel = 0;
@@ -56,10 +54,8 @@ public:
 	float BaseDetrimentalResistAtLevel = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defenses At X Level")
 	float BaseDivineResistAtLevel = 0;
-	
-	
-	
-	FLevelUpStruct();
-	~FLevelUpStruct();
-};
 
+
+	FLevelUpStruct();
+	virtual ~FLevelUpStruct() override;
+};

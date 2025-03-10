@@ -16,7 +16,7 @@ class SLASHER_API UStatsWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
-	
+
 	//HP Display
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* HPTextBlock;
@@ -46,7 +46,7 @@ class SLASHER_API UStatsWidget : public UUserWidget
 	UTextBlock* LevelTextBlock;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* LevelDisplayTextBlock;
-	
+
 	//Status Display
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* StatusTextBlock;
@@ -64,22 +64,20 @@ class SLASHER_API UStatsWidget : public UUserWidget
 	UPROPERTY(meta = (BindWidget))
 	UImage* ForegroundImage;
 
-	virtual FReply NativeOnPreviewMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
-	virtual FReply NativeOnMouseButtonDown( const FGeometry& InGeometry, const FPointerEvent& InMouseEvent ) override;
+	virtual FReply
+	NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	virtual void NativeConstruct() override;
-	
+
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	                                  UDragDropOperation*& OutOperation) override;
 
 	void HandleNativeVisibilityChanged(ESlateVisibility InVisibility);
-	
-public:
 
+public:
 	void StatsWidget_UpdateAll();
-	
-	
-	
 };

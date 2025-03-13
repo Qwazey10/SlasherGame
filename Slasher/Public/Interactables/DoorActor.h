@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InteractableBase.h"
 #include "Interfaces/BPI_PlayerToEnemy.h"
 #include "Interfaces/BPI_PlayerToInteractable.h"
 #include "Components/TimelineComponent.h"
@@ -10,7 +11,7 @@
 #include "DoorActor.generated.h"
 
 UCLASS()
-class SLASHER_API ADoorActor : public AActor, public IBPI_PlayerToInteractable, public IBPI_PlayerToEnemy
+class SLASHER_API ADoorActor : public AInteractableBase
 {
 	GENERATED_BODY()
 
@@ -18,9 +19,10 @@ public:
 	// Sets default values for this actor's properties
 	ADoorActor();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UStaticMeshComponent* DoorMesh;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite) Getting Base Mesh From InteractableBase
+	//UStaticMeshComponent* DoorMesh;
 
+	//Unique Vars to Door Mechanics
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCurveFloat* DoorCurve_Float;
 
@@ -75,8 +77,8 @@ public:
 
 	virtual void PlayerToInteractable_InputInteractPressed_Implementation() override;
 	virtual void PlayerToInteractable_HighlightTrace_Implementation() override;
-	virtual void PlayerToInteractable_CustomDepthFilterOn_Implementation() override;
-	virtual void PlayerToInteractable_CustomDepthFilterOff_Implementation() override;
+	/*virtual void PlayerToInteractable_CustomDepthFilterOn_Implementation() override;
+	virtual void PlayerToInteractable_CustomDepthFilterOff_Implementation() override;*/
 
 	//
 };

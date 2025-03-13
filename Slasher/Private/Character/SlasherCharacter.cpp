@@ -2,7 +2,7 @@
 
 #include "Character/SlasherCharacter.h"
 
-#include "NiagaraMeshRendererProperties.h"
+
 #include "ActorComponent/AC_AbilityComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -15,7 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Modes/SlasherGameInstance.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
-#include "Tasks/GameplayTask_SpawnActor.h"
+
 
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -617,7 +617,7 @@ void ASlasherCharacter::InteractTrace()
 	FHitResult DebugTrace = AbilityComponent->Utility_LineTrace(StartPos, EndPos, EDrawDebugTrace::None,
 	                                                            PlayerDataAsset->TraceDistance, 1.0f);
 
-	if (DebugTrace.bBlockingHit && DebugTrace.Actor->GetClass()->ImplementsInterface(
+	if (DebugTrace.bBlockingHit && DebugTrace.Actor != nullptr && DebugTrace.Actor->GetClass()->ImplementsInterface(
 		UBPI_PlayerToInteractable::StaticClass()))
 	{
 		AActor* InteractedActor = DebugTrace.GetActor();
@@ -760,19 +760,8 @@ void ASlasherCharacter::RemoveItemFromInventory(int ItemIDToRemove)
 	//Todo -- Remove Item From Inventory
 }
 
-void ASlasherCharacter::SlasherCharacter_TakeDamage(float DamageTaken)
-{
-	CurrentHealth = CurrentHealth - DamageTaken;
-	if (CurrentHealth <= 0)
-	{
-		DeathOfCharacter();
-	}
-}
 
-void ASlasherCharacter::DeathOfCharacter()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Black, "DEATH OF CHARACTER");
-}
+
 
 void ASlasherCharacter::BeginPlay_SetLevel() // TODO - Rename this function for better clarity. Level As in EXP. 
 {
@@ -1382,4 +1371,445 @@ void ASlasherCharacter::JumpPressWhileSwimming()
 void ASlasherCharacter::AnimNotify_AttackWindowStart()
 {
 	
+}
+
+
+/*
+ *
+ *				START OF THE DAMAGE SYSTEM FOR PLAYER 
+ *
+ */
+
+void ASlasherCharacter::DeathOfCharacter()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Black, "DEATH OF CHARACTER");
+	UGameplayStatics::PlaySoundAtLocation(this, PlayerDataAsset->HitAudio_00, GetActorLocation(),GetActorRotation());
+	//todo - AddMoreToThisDeathFunction
+}
+
+void ASlasherCharacter::PlayerToEnemyInterface_Attack_Implementation(AActor* InstigatingActor, float BaseWeaponDamage,
+	EDamageType PrimaryDamageType, float PrimaryStatusAmt, EDamageType SecondaryDamageType, float SecondaryStatusAmt)
+{
+	IBPI_PlayerToEnemy::PlayerToEnemyInterface_Attack_Implementation(InstigatingActor, BaseWeaponDamage,
+																	 PrimaryDamageType, PrimaryStatusAmt,
+																	 SecondaryDamageType,
+																	 SecondaryStatusAmt);
+
+
+	
+	switch (PrimaryDamageType)
+	{
+		
+	case EDamageType::Null:
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+				"GlobalUtils.cpp -- CalculateDamage -- PrimaryDamageType is Null, Add Damage Type to PrimaryItemDatabase");
+			break;
+		}
+
+	case EDamageType::DirectDamage_Physical:
+		{
+			CurrentHealth = BaseWeaponDamage * (Total_Armor/ 100.0f) / 100.0f;
+			if (CurrentHealth <= 0)
+			{
+				DeathOfCharacter();
+			}
+			break;
+		}
+
+	case EDamageType::DirectDamage_Fire:
+		{
+			CurrentHealth = BaseWeaponDamage * (Total_Resist_Fire / 100.0f) / 100.0f;
+			if (CurrentHealth <= 0)
+			{
+				DeathOfCharacter();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_Cold:
+		{
+			CurrentHealth = BaseWeaponDamage * (Total_Resist_Cold / 100.0f) / 100.0f;
+			if (CurrentHealth <= 0)
+			{
+				DeathOfCharacter();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_Divine:
+		{
+			CurrentHealth = BaseWeaponDamage * (Total_Resist_Divine / 100.0f) / 100.0f;
+			if (CurrentHealth <= 0)
+			{
+				DeathOfCharacter();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Poison:
+		{
+			CurrentHealth = PrimaryStatusAmt * (Total_Resist_Detrimental / 100.0f) / 100.0f;
+			if (BasePoisonBuildup >= 100)
+			{
+				StartPoisonEffect();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Bleed:
+		{
+			BaseBleedBuildup = PrimaryStatusAmt * (Total_Armor / 100.0f) / 100.0f;
+			if (BaseBleedBuildup >= 100)
+			{
+				StartBleedingEffect();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Fire:
+		{
+			BaseBurnBuildup = PrimaryStatusAmt * (InteractableBaseFireResist / 100.0f) / 100.0f;
+			UpdateBurnStatusMeter(BaseBurnBuildup);
+			if (BaseBurnBuildup >= 100)
+			{
+				DestroyInteractable();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Cold:
+		{
+			InteractableBaseFrostBuildup = PrimaryStatusAmt * (InteractableBaseColdResist / 100.0f) / 100.0f;
+			if (InteractableBaseHealth >= 100)
+			{
+				DestroyInteractable();
+			}
+		}
+
+	default:
+		{
+			break;
+		}
+	}
+	////////////Secondary Damage////////////////
+	switch (SecondaryDamageType)
+	{
+		default:
+		{
+			break;
+		}
+			
+	case EDamageType::Null:
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+				"GlobalUtils.cpp -- CalculateDamage -- PrimaryDamageType is Null, Add Damage Type to PrimaryItemDatabase");
+			break;
+		}
+
+	case EDamageType::DirectDamage_Physical:
+		{
+			InteractableBaseHealth = SecondaryStatusAmt * (InteractableBaseArmor / 100.0f) / 100.0f;
+			if (InteractableBaseHealth <= 0)
+			{
+				DestroyInteractable();
+			}
+			break;
+		}
+
+	case EDamageType::DirectDamage_Fire:
+		{
+			InteractableBaseHealth = SecondaryStatusAmt * (InteractableBaseFireResist / 100.0f) / 100.0f;
+			if (InteractableBaseHealth <= 0)
+			{
+				DestroyInteractable();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_Cold:
+		{
+			InteractableBaseHealth = SecondaryStatusAmt * (InteractableBaseColdResist / 100.0f) / 100.0f;
+			if (InteractableBaseHealth <= 0)
+			{
+				DestroyInteractable();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_Divine:
+		{
+			InteractableBaseHealth = SecondaryStatusAmt * (InteractableBaseDivineResist / 100.0f) / 100.0f;
+			if (InteractableBaseHealth <= 0)
+			{
+				DestroyInteractable();
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Poison:
+		{
+			if (bIsInteractableImmuneMagic)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,"Interactable is Immune to Poison");
+			}
+			else
+			{
+				InteractableBasePoisonBuildup = SecondaryStatusAmt * (InteractableBaseDetrimentalResist / 100.0f) / 100.0f;
+				if (InteractableBasePoisonBuildup >= 100)
+				{
+					StartPoisonEffect();
+				}
+			}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Bleed:
+		{
+				if (bIsInteractableImmuneBleed)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+						"Interactable is Immune to Bleed");
+				}
+				else
+				{
+					InteractableBasePoisonBuildup = SecondaryStatusAmt * (InteractableBaseDetrimentalResist / 100.0f) / 100.0f;
+					if (InteractableBasePoisonBuildup >= 100)
+					{
+						StartBleedingEffect();
+					}
+				}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Fire:
+		{
+				if (bIsInteractableImmuneFire)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Orange,
+						"Interactable is Immune to Fire");
+				}
+				else
+				{
+					InteractableBasePoisonBuildup = SecondaryStatusAmt * (InteractableBaseDetrimentalResist / 100.0f) / 100.0f;
+					if (InteractableBasePoisonBuildup >= 100)
+					{
+						StartBurningEffect();
+					}
+				}
+		}
+
+	case EDamageType::DIRECTDAMAGE_DETRIMENTAL_Cold:
+		{
+				
+				if (bIsInteractableImmuneCold)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Cyan,
+						"Interactable is Immune to COLD");
+				}
+				else
+				{
+					InteractableBaseFrostBuildup = SecondaryStatusAmt * (InteractableBaseColdResist / 100.0f) / 100.0f;
+					if (InteractableBaseFrostBuildup >= 100)
+					{
+						StartFrostEffect();
+					}
+				}
+				
+		}
+	}
+}
+
+
+
+
+/*
+ * Burning Functions
+ */
+
+void ASlasherCharacter::StartBurningEffect()
+{
+	GetWorldTimerManager().SetTimer(
+		BurningEffectTimerHandle,
+		this,
+		&ASlasherCharacter::ApplyBurningDamage,
+		BurningTimerTickRate,
+		true);
+}
+void ASlasherCharacter::ApplyBurningDamage()
+{
+	++BurningEffectTimerCount;
+	if (BurningEffectTimerCount <= BurningEffectTimerCountMax)
+	{
+		CurrentHealth = CurrentHealth - BurnDamageBase;
+		if (CurrentHealth <= 0)
+		{
+			DeathOfCharacter();
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black, TEXT("ApplyBurningDamage"));
+		}
+	}
+	if (BurningEffectTimerCount >= BurningEffectTimerCountMax)
+	{
+		StopBurningEffect();
+	}
+}
+void ASlasherCharacter::StopBurningEffect()
+{
+	GetWorldTimerManager().ClearTimer(BurningEffectTimerHandle);
+}
+
+/*
+ * Poison Effect
+ */
+
+void ASlasherCharacter::StartPoisonEffect()
+{
+	
+	GetWorldTimerManager().SetTimer(
+	PoisonEffectTimerHandle,
+	this,
+	&ASlasherCharacter::ApplyPoisonDamage,
+	PoisonTimerTickRate,
+	true);
+	
+}
+void ASlasherCharacter::ApplyPoisonDamage()
+{
+	CurrentHealth = CurrentHealth - PoisonDamageBase;
+	if (CurrentHealth <= 0)
+	{
+		DeathOfCharacter();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black, TEXT("ApplyPoisonDamage"));
+	}
+	++PoisonEffectTimerCount;
+	if (PoisonEffectTimerCount >= PoisonEffectTimerCountMax)
+	{
+		StopPoisonEffect();
+		GetWorldTimerManager().ClearTimer(PoisonEffectTimerHandle);
+	}
+}
+void ASlasherCharacter::StopPoisonEffect()
+{
+	GetWorldTimerManager().ClearTimer(PoisonEffectTimerHandle);
+}
+
+/*
+ * Frost Effect
+ */
+
+void ASlasherCharacter::StartFrostEffect()
+{
+	GetWorldTimerManager().SetTimer(
+	FrostEffectTimerHandle,
+	this,
+	&ASlasherCharacter::ApplyFrostDamage,
+	FrostTimerTickRate,
+	true);
+}
+void ASlasherCharacter::ApplyFrostDamage()
+{
+	
+	
+	++FrostEffectTimerCount;
+	if (FrostEffectTimerCount >= FrostEffectTimerCountMax)
+	{
+		StopFrostEffect();
+	}
+	
+}
+void ASlasherCharacter::StopFrostEffect()
+{
+	
+	GetMesh()->SetSimulatePhysics(true);
+	GetWorldTimerManager().ClearTimer(PoisonEffectTimerHandle);
+	FrostEffectTimerCount = 0;
+	
+}
+
+/*
+ * Bleeding Effect
+ */
+void ASlasherCharacter::StartBleedingEffect()
+{
+	GetWorldTimerManager().SetTimer(
+	BleedingEffectTimerHandle,
+	this,
+	&ASlasherCharacter::ApplyBleedingDamage,
+	BleedingTimerTickRate,
+	true);
+}
+
+void ASlasherCharacter::ApplyBleedingDamage()
+{
+	CurrentHealth = (CurrentHealth * 0.95) - BleedingDamageBase;
+	if (CurrentHealth <= 0)
+	{
+		DeathOfCharacter();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black, TEXT("ApplyBleedingDamage"));
+	}
+	++BleedingEffectTimerCount;
+	if (BleedingEffectTimerCount >=BleedingEffectTimerCountMax)
+	{
+		StopBleedingEffect();
+		
+	}
+}
+
+void ASlasherCharacter::StopBleedingEffect()
+{
+	GetWorldTimerManager().ClearTimer(BleedingEffectTimerHandle);
+}
+
+
+
+
+void ASlasherCharacter::UpdateHealthWidget(float HealthToSet)
+{
+	//Todo - Create the hud and link this function to link something to strings
+}
+
+void ASlasherCharacter::UpdateManaWidget(float ManaValueToSet)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
+}
+
+void ASlasherCharacter::UpdatePowerMeter(float PowerMeterValueToSet)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
+}
+
+void ASlasherCharacter::UpdateBurnStatusMeter(float BurnStatusAmt)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
+}
+
+void ASlasherCharacter::UpdatePoisonStatusMeter(float PoisonStatusAmt)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
+}
+
+void ASlasherCharacter::UpdateFrostStatusMeter(float FrostStatusAmt)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
+}
+
+void ASlasherCharacter::UpdateBleedStatusMeter(float BleedStatusAmt)
+{
+	if (this->ActorHasTag("Player"))
+	{
+		
+	}
 }

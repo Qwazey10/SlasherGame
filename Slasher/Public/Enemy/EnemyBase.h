@@ -5,16 +5,16 @@
 #include "CoreMinimal.h"
 #include "ActorComponent/AC_AbilityComponent.h"
 #include "Interfaces/BPI_PlayerToEnemy.h"
+#include "Interfaces/BPI_DamageInterface.h"
 #include "GameFramework/Character.h"
 #include "GlobalEnums.h"
-
 #include "EnemyBase.generated.h"
 
 
 class UAC_AbilityComponent;
 
 UCLASS()
-class SLASHER_API AEnemyBase : public ACharacter, public IBPI_PlayerToEnemy
+class SLASHER_API AEnemyBase : public ACharacter, public IBPI_PlayerToEnemy, public IBPI_DamageInterface
 {
 	GENERATED_BODY()
 

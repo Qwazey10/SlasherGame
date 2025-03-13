@@ -208,10 +208,25 @@ void AEnemyBase::DamageTaken(float DamageAmount, AActor* DamageInstigator, EDama
 //UE_LOG(LogTemp, Log, TEXT("This is a Development or Debug build."));
 //#endif
 
-void AEnemyBase::TriggerBurningEffect()
+/*void AEnemyBase::TriggerBurningEffect()
 {
 	
+	// Start a timer that triggers every 3 seconds
+	GetWorld()->GetTimerManager().SetTimer(
+		StateChangeTimerHandle, 
+		this, 
+		&AEnemyBase::ApplyBurningDamage, 
+		3.0f, 
+		true
+	);
 }
+
+void AEnemyBase::ApplyBurningDamage()
+{
+	float BurnDamageTaken = GlobalUtils::CalculateBaseDamage(10, EDamageType::DirectDamage_Fire, 0, EnemyBaseResistFire, 0, 0, 0)
+	DamageTaken(BurnDamageTaken);
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Black, TEXT("ApplyBurningDamage"));
+}*/
 void AEnemyBase::TriggerBleedingEffect()
 {
 	

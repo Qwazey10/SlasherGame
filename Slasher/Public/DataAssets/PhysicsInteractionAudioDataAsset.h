@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NiagaraSystem.h"
 #include "Engine/DataAsset.h"
 #include "Sound/SoundCue.h"
 #include "PhysicsInteractionAudioDataAsset.generated.h"
@@ -16,6 +17,27 @@ class SLASHER_API UPhysicsInteractionAudioDataAsset : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	
+	//Item Status Niagara
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Status Niagara")
+	UNiagaraSystem* ItemStatusNiagara_Burning;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Status Niagara")
+	UNiagaraSystem* ItemStatusNiagara_Poison;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Status Niagara")
+	UNiagaraSystem* ItemStatusNiagara_Frost;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Status Niagara")
+	UNiagaraSystem* ItemStatusNiagara_Bleeding;
+	
+
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseItemAudio")
+	USoundCue* BaseItemAudio_Pickup;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BaseItemAudio")
+	USoundCue* BaseItemAudio_Destroy;
 	//Default Impact Audio -- Light
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SurfaceType0 -- Impact Audio - Default")
 	USoundCue* PhysicsImpact_Default_Light_00;

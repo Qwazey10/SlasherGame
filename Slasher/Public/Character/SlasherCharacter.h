@@ -434,6 +434,72 @@ public:
 	bool bIsAttacking = false;
 	void AnimNotify_AttackWindowStart();
 
+	virtual void ASlasherCharacter::PlayerToEnemyInterface_Attack_Implementation(AActor* InstigatingActor, float BaseWeaponDamage,
+	EDamageType PrimaryDamageType, float PrimaryStatusAmt, EDamageType SecondaryDamageType, float SecondaryStatusAmt) override;
+
+	void OnBlock();
+	bool bIsBlocking = false;
+	void AnimNotify_BlockWindowStart();
+	//Status Effects
+	FTimerHandle BurningEffectTimerHandle;
+	float BurnDamageBase;
+	int BurningEffectTimerCount;
+	int BurningEffectTimerCountMax = 10;
+	float BurningTimerTickRate = 2;
+	void StartBurningEffect();
+	void ApplyBurningDamage();
+	void StopBurningEffect();
+
+	FTimerHandle PoisonEffectTimerHandle;
+	float PoisonDamageBase;
+	int PoisonEffectTimerCount;
+	int PoisonEffectTimerCountMax = 5;
+	float PoisonTimerTickRate = 6;
+	void StartPoisonEffect();
+	void ApplyPoisonDamage();
+	void StopPoisonEffect();
+
+	FTimerHandle FrostEffectTimerHandle;
+	float FrostDamageBase = 0.0f;
+	int FrostEffectTimerCount;
+	int FrostEffectTimerCountMax = 2;
+	float FrostTimerTickRate = 6;
+	void StartFrostEffect();
+	void ApplyFrostDamage();
+	void StopFrostEffect();
+
+	FTimerHandle BleedingEffectTimerHandle;
+	float BleedingDamageBase;
+	int BleedingEffectTimerCount;
+	int BleedingEffectTimerCountMax = 10;
+	float BleedingTimerTickRate = 2;
+	void StartBleedingEffect();
+	void ApplyBleedingDamage();
+	void StopBleedingEffect();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Status")
+	float BasePoisonBuildup = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Status")
+	float BaseBleedBuildup = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Status")
+	float BaseBurnBuildup = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Status")
+	float BaseFrostBuildup = 0.0f;
+
+	//Update Status Meter
+	void UpdateFrostStatusMeter(float FrostStatusAmt);
+	void UpdateBurnStatusMeter(float BurnStatusAmt);
+	void UpdatePoisonStatusMeter(float PoisonStatusAmt);
+	void UpdateBleedStatusMeter(float BleedStatusAmt);
+
+	//Update the Player's main 
+	void UpdateHealthWidget(float HealthToSet);
+	void UpdateManaWidget(float ManaValueToSet);
+	void UpdatePowerMeter(float PowerMeterValueToSet);
+	
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -446,4 +512,5 @@ public:
 
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 	UStaticMeshComponent* RotatingMenuItemStaticMesh;
+	
 };

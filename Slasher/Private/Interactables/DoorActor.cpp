@@ -11,8 +11,9 @@ ADoorActor::ADoorActor()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
-	DoorMesh->SetSimulatePhysics(false);
+	//Do we need this?
+	//BaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
+	//BaseMesh->SetSimulatePhysics(false);
 }
 
 // Called every frame
@@ -31,7 +32,7 @@ void ADoorActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitialDoorRotation = DoorMesh->GetRelativeRotation();
+	InitialDoorRotation = InteractableBaseMesh->GetRelativeRotation();
 	FinishedDoorRotation = InitialDoorRotation + FRotator(0.f, 90.f, 0.f); // Rotate 90 degrees on Yaw
 
 
@@ -72,14 +73,14 @@ void ADoorActor::HandleTimelineUpdate(float Value)
 	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, FString::Printf(TEXT("Door Update %f"), Value));
 	// Interpolate rotation
 	FRotator NewRotation = UKismetMathLibrary::RLerp(InitialDoorRotation, FinishedDoorRotation, Value, true);
-	DoorMesh->SetRelativeRotation(NewRotation);
-	DoorMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	InteractableBaseMesh->SetRelativeRotation(NewRotation);
+	InteractableBaseMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	bIsActive = true;
 }
 
 void ADoorActor::HandleTimelineFinished()
 {
-	DoorMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractableBaseMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, "Timeline finished!");
 	bIsActive = false;
 }
@@ -137,17 +138,17 @@ void ADoorActor::PlayerToInteractable_HighlightTrace_Implementation()
 }
 
 
-void ADoorActor::PlayerToInteractable_CustomDepthFilterOn_Implementation()
+/*void ADoorActor::PlayerToInteractable_CustomDepthFilterOn_Implementation()
 {
-	DoorMesh->SetRenderCustomDepth(true);
-	DoorMesh->SetCustomDepthStencilValue(1);
+	InteractableBaseMesh->SetRenderCustomDepth(true);
+	InteractableBaseMesh->SetCustomDepthStencilValue(1);
 }
 
 void ADoorActor::PlayerToInteractable_CustomDepthFilterOff_Implementation()
 {
-	DoorMesh->SetRenderCustomDepth(false);
-	DoorMesh->SetCustomDepthStencilValue(0);
-}
+	InteractableBaseMesh->SetRenderCustomDepth(false);
+	InteractableBaseMesh->SetCustomDepthStencilValue(0);
+}*/
 
 
 //Player Damage Function Interface

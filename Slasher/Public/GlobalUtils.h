@@ -15,20 +15,6 @@ class SLASHER_API GlobalUtils
 	
 public:
 	
-	static float CalculateBaseDamage(
-		float BaseDamage,
-		EDamageType PrimaryDamageType,
-		float Armor,
-		float ResistFire,
-		float ResistCold,
-		float ResistDetrimental,
-		float ResistDivine);
-		
-	static bool CalculateStatus(
-		float AttackerStatusBuild,
-		float DefenderStatusAmt,
-		float DefenderStatusResist
-		);
 	
 
 	

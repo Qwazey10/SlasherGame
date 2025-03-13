@@ -8,12 +8,13 @@
 #include "DataAssets/PhysicsInteractionAudioDataAsset.h"
 #include "Engine/DataTable.h"
 #include "BuoyancyComponent.h"
+#include "InteractableBase.h"
 
 #include "GameFramework/Actor.h"
 #include "ItemActor.generated.h"
 
 UCLASS()
-class SLASHER_API AItemActor : public AActor, public IBPI_PlayerToInteractable
+class SLASHER_API AItemActor : public AInteractableBase//, public IBPI_PlayerToInteractable
 {
 	GENERATED_BODY()
 
@@ -35,8 +36,7 @@ public:
 	//Mesh and DataTable 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Primary Item DataTable")
 	UDataTable* ItemDataTable;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
-	UStaticMeshComponent* Mesh;
+
 
 
 	// Audio References
@@ -150,8 +150,8 @@ public:
 	virtual void PlayerToInteractable_InputInteractPressed_Implementation() override;
 	virtual void PlayerToInteractable_HighlightTrace_Implementation() override;
 
-	virtual void PlayerToInteractable_CustomDepthFilterOn_Implementation() override;
-	virtual void PlayerToInteractable_CustomDepthFilterOff_Implementation() override;
+	/*virtual void PlayerToInteractable_CustomDepthFilterOn_Implementation() override;
+	virtual void PlayerToInteractable_CustomDepthFilterOff_Implementation() override;*/
 
 	//Hit Fucntions for the physics interaction audio
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
@@ -181,6 +181,5 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bouyancy Component")
 	UBuoyancyComponent* BuoyancyComponent;
 	// Physics Interaction  Audi DataAsset
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhysicsInteractionAudio - DataAsset")
-	UPhysicsInteractionAudioDataAsset* PhysicsInteractionAudioDataAsset;
+
 };

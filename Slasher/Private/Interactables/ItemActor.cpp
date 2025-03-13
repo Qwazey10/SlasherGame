@@ -17,11 +17,10 @@ AItemActor::AItemActor()
 	PrimaryActorTick.bCanEverTick = true;
 	Tags.Add(FName("Item"));
 	
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	RootComponent = Mesh;
+
 	//Set Physics
-	Mesh->SetSimulatePhysics(true); //Enable Simulate Physics
-	Mesh->SetNotifyRigidBodyCollision(true); // Required to fire the hit event
+	InteractableBaseMesh->SetSimulatePhysics(true); //Enable Simulate Physics
+	InteractableBaseMesh->SetNotifyRigidBodyCollision(true); // Required to fire the hit event
 	
 	//Init Buoyancy Component
 	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("Buoyancy"));
@@ -78,7 +77,7 @@ void AItemActor::Constructor_SetupItem(int SetupItemID)
 
 			if (LookupItemStruct->ItemDisplayMesh != nullptr)
 			{
-				Mesh->SetStaticMesh(LookupItemStruct->ItemDisplayMesh);
+				InteractableBaseMesh->SetStaticMesh(LookupItemStruct->ItemDisplayMesh);
 			}
 			else
 			{
@@ -183,19 +182,6 @@ void AItemActor::PlayerToInteractable_HighlightTrace_Implementation()
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald, "InteractTrace Interface Event From ItemActor");
 }
 
-void AItemActor::PlayerToInteractable_CustomDepthFilterOn_Implementation()
-{
-	Mesh->SetRenderCustomDepth(true);
-	Mesh->SetCustomDepthStencilValue(1);
-	//IBPI_PlayerToInteractable::PlayerToInteractable_CustomDepthFilterOn_Implementation();
-}
-
-void AItemActor::PlayerToInteractable_CustomDepthFilterOff_Implementation()
-{
-	Mesh->SetRenderCustomDepth(false);
-	Mesh->SetCustomDepthStencilValue(0);
-	//IBPI_PlayerToInteractable::PlayerToInteractable_CustomDepthFilterOff_Implementation();
-}
 
 /**
  * This function is called whenever this actor registers a collision with another object.
@@ -589,7 +575,7 @@ void AItemActor::SetMassFromDataTable()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Item Data Table Row Found"));
 			FItemStruct* LookupItemStruct = ItemDataTable->FindRow<FItemStruct>(RowName, TEXT("Item"), true);
-			Mesh->SetMassOverrideInKg("None", LookupItemStruct->ItemPhysicsMass);
+			InteractableBaseMesh->SetMassOverrideInKg("None", LookupItemStruct->ItemPhysicsMass);
 		}
 	}
 }
